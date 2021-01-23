@@ -15,13 +15,16 @@ license-file:        LICENSE
 author:              Charanjit Singh
 maintainer:          ckhabra@gmail.com
 
-category:            Cli
+category:            CLI, Project Management
 extra-source-files:  README.md
 
 common core
   build-depends:
     , base
     , text
+    , org-mode
+    , prettyprinter
+    , containers
 
   ghc-options:        -Wall
                       -Wno-name-shadowing
@@ -51,7 +54,7 @@ common core
 library
   import:           core
   exposed-modules:
-    SaunfMain
+    Saunf
   hs-source-dirs:   src
   default-language: Haskell2010
 
@@ -71,3 +74,18 @@ executable saunf
     -with-rtsopts=-N
     -flate-specialise
     -fspecialise-aggressively
+
+test-suite test-suite
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
+  ghc-options: -Wall
+  build-depends:
+     base
+   , hspec
+   , hspec-discover
+   , org-mode
+   , saunf
+  other-modules: SaunfSpec
+  default-language: Haskell2010

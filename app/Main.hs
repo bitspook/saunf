@@ -1,5 +1,6 @@
 module Main where
 
+import Saunf
 import Options.Applicative
 
 data CliOptions = Readme ReadmeOptions deriving (Show)
@@ -27,5 +28,5 @@ main :: IO ()
 main = do
   val <- execParser cliParser
   case val of
-    Readme Push -> putStrLn "beep boop...(re)creating readme.md...boop beep"
+    Readme Push -> pushReadmeFile
     _ -> putStrLn "Not implemented yet :-("
