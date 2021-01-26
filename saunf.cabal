@@ -22,9 +22,10 @@ common core
   build-depends:
     , base
     , text
-    , org-mode
     , prettyprinter
     , containers
+    , pandoc
+    , pandoc-types
 
   ghc-options:        -Wall
                       -Wno-name-shadowing
@@ -54,7 +55,8 @@ common core
 library
   import:           core
   exposed-modules:
-    Saunf
+    Saunf,
+    Saunf.Readme
   hs-source-dirs:   src
   default-language: Haskell2010
 
@@ -85,7 +87,9 @@ test-suite test-suite
      base
    , hspec
    , hspec-discover
-   , org-mode
+   , pandoc
+   , pandoc-types
    , saunf
-  other-modules: SaunfSpec
+  other-modules:
+    ReadmeSpec
   default-language: Haskell2010

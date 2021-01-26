@@ -13,9 +13,6 @@
     overlay = self: super: {
       haskellPackages = super.haskellPackages.override {
         overrides = hself: hsuper: {
-          org-mode = hsuper.org-mode.overrideAttrs(_: {
-            patches = [./org-mode.patch];
-          });
           saunf =
             hself.callCabal2nix
             "saunf"
