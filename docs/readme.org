@@ -27,3 +27,19 @@ issues.
 
 ** Generate readme.md file from main doc file as defined in saunf.dhall
 - Fall back to =docs/readme.org= for main doc file if ~saunf.dhall~ is missing
+
+
+* Configuration
+
+** Readme
+:PROPERTIES:
+:ID:       79e80db6-a1bd-4476-b6e6-3644c07ade27
+:END:
+
+#+begin_src markdown
+  # $$title$$
+
+  $$description$$
+
+  ## $$#features$$
+#+end_src
