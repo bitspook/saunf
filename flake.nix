@@ -1,5 +1,5 @@
 {
-  description = "A tasty project management solution";
+  description = "Plain text software project management";
 
   # To update all inputs:
   # $ nix flake update --recreate-lock-file
