@@ -41,5 +41,5 @@ issues.
 
   $$description$$
 
-  ## $$#features$$
+  ## $#features$
 #+end_src

@@ -1,61 +1,46 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Saunf.Readme
-  ( findTitle,
-    findDescription,
+  ( findDescription,
     findSection,
-    buildReadme,
     getReadmeTemplate,
     getConfig,
-    SaunfConfig(..),
-    Readme (..),
+    soberizeReadmeTemplate,
+    parseInjectedSectionName,
+    setSectionHeaderLevel,
+    SaunfConfig (..),
   )
 where
 
-import Data.List
-import Data.Text (Text)
+import Data.Maybe (fromMaybe)
+import Data.List (find)
+import Data.Text (Text, pack)
+import qualified Debug.Trace as D
 import Text.Pandoc
+import Text.Pandoc.Shared
+import Text.Parsec as Parsec
 
 -- Create a readme doc, and push it to readme.md
 pushReadmeFile :: IO ()
 pushReadmeFile = putStrLn "Implementation in progress"
 
-data Readme = Readme {readmeTitle :: Maybe [Inline], readmeBlocks :: [Block]}
-  deriving (Show)
-
-buildReadme :: Pandoc -> Readme
-buildReadme file@(Pandoc _ bs) = Readme (findTitle file) bs
-
-findTitle :: Pandoc -> Maybe [Inline]
-findTitle (Pandoc meta _) = metaTitle
-  where
-    getInlines x = case x of
-      MetaInlines x -> Just x
-      _ -> Nothing
-    metaTitle = getInlines =<< lookupMeta "title" meta
-
 findDescription :: Pandoc -> Maybe [Block]
-findDescription (Pandoc _ bs) = case takeWhile isNotHeader bs of
+findDescription (Pandoc _ bs) = case takeWhile (not . isHeaderBlock) bs of
   [] -> Nothing
   xs -> Just xs
-  where
-    isNotHeader Header {} = False
-    isNotHeader _ = True
 
 findSection :: Text -> [Block] -> Maybe [Block]
 findSection id bs = case dropWhile isNotMatch bs of
   [] -> Nothing
-  h@(Header level _ _) : xs -> Just $ h : takeWhile (\x -> isNotHeader x || isNotHeaderOfLevel level x) xs
+  h@(Header level _ _) : xs -> Just $ h : takeWhile (\x -> (not . isHeaderBlock) x || isNotHeaderOfLevel level x) xs
   _ -> Nothing
   where
     isNotMatch x = case x of
       Header _ (id', _, _) _ -> id /= id'
       _ -> True
-    isNotHeader x = case x of
-      Header {} -> False
-      _ -> True
     isNotHeaderOfLevel lvl x = case x of
-      (Header lvl' _ _) -> lvl /= lvl'
+      (Header lvl' _ _) -> lvl < lvl'
       _ -> False
 
 newtype SaunfConfig
@@ -65,6 +50,7 @@ newtype SaunfConfig
 getConfig :: Pandoc -> Maybe SaunfConfig
 getConfig (Pandoc _ bs) = SaunfConfig <$> findSection "saunf-config" bs
 
+-- | Get the readme template string from the config if it is present
 getReadmeTemplate :: SaunfConfig -> Maybe Text
 getReadmeTemplate (SaunfConfig bs) = case findSection "readme" bs of
   Just xs -> firstCodeBlock xs
@@ -76,3 +62,45 @@ getReadmeTemplate (SaunfConfig bs) = case findSection "readme" bs of
     firstCodeBlock xs = case find isCodeBlock xs of
       Just (CodeBlock _ t) -> Just t
       _ -> Nothing
+
+-- | Parse the name of the section which should be injected out of special
+-- syntax "$#section-name$".
+parseInjectedSectionName :: Text -> Maybe Text
+parseInjectedSectionName xs = either (const Nothing) (Just . pack) $ parse nameParser "" xs
+  where
+    nameParser = do
+      _ <- Parsec.char '$'
+      _ <- Parsec.char '#'
+      name <- Parsec.many Parsec.letter
+      _ <- Parsec.char '$'
+      return name
+
+-- | Adjust the level of a section to given level. This will make the first
+-- Header in section of the given level, and every sub-Header's level
+-- will be shifted accordingly
+setSectionHeaderLevel :: Int -> [Block] -> [Block]
+setSectionHeaderLevel n xs = case xs of
+  ((Header sectionLvl attr inner):bs) -> Header n attr inner : (shiftHeader <$> bs)
+    where
+      delta = n - sectionLvl
+      shiftHeader b = case b of
+        Header lvl a i -> Header (lvl + delta) a i
+        _ -> b
+  _ -> xs
+
+
+-- | Evaluate all Saunf syntax in readme template to produce a valid Pandoc
+-- template. It parses readme template as markdown, operate on it to remove all
+-- special syntax, and return back a markdown string
+soberizeReadmeTemplate :: (PandocMonad m) => Text -> [Block] -> m Text
+soberizeReadmeTemplate tStr pmpBlocks = do
+  (Pandoc tMeta tBlocks) <- readMarkdown def tStr
+  writeMarkdown def (Pandoc tMeta (soberize pmpBlocks `concatMap` tBlocks))
+  where
+    soberize :: [Block] -> Block -> [Block]
+    soberize bs a = case a of
+      (Header lvl _ xs) -> setSectionHeaderLevel lvl blks
+        where blks = case parseInjectedSectionName (stringify xs) of
+                Nothing -> [a]
+                Just name -> fromMaybe [] (findSection name bs)
+      _ -> [a]
