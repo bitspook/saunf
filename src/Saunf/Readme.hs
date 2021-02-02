@@ -98,15 +98,19 @@ instance ToJSON ReadmeContext where
       ]
 
 -- Create a readme doc, and push it to readme.md
-pushReadmeFile :: SaunfConfig -> Pandoc -> IO ()
-pushReadmeFile conf (Pandoc meta pmpBs) = do
+pushReadmeFile :: SaunfConfig -> Pandoc -> FilePath -> IO ()
+pushReadmeFile conf pmpDoc@(Pandoc meta pmpBs) dest = do
   let template = fromMaybe (error "Couldn't find readme template") (getReadmeTemplate conf)
   soberTemplate' <- P.runIO $ soberizeReadmeTemplate template pmpBs
   soberTemplate <- P.handleError soberTemplate'
 
   let title = lookupMetaString "title" meta
-  let context = ReadmeContext title ""
+  description' <- P.runIO $ writeMarkdown def $ Pandoc mempty $ fromMaybe mempty $ findDescription pmpDoc
+  description <- P.handleError description'
+
+  let context = ReadmeContext title description
+
   tc <- compileTemplate "readme.md" soberTemplate
   case tc of
     Left e -> error e
-    Right t -> T.putStrLn $ render Nothing $ renderTemplate t (toJSON context)
+    Right t -> T.writeFile dest $ render Nothing $ renderTemplate t (toJSON context)

@@ -29,6 +29,7 @@ cliParser = info (cliOptions <**> helper) (fullDesc <> header "Tasty project man
 
 main :: IO ()
 main = do
+  let readmeDest = "./readme.md"
   pmpText <- T.readFile "./saunf/saunf.org"
   org' <- P.runIO $ readOrg def pmpText
   org <- P.handleError org'
@@ -39,5 +40,5 @@ main = do
     Nothing -> error "Could not find Saunf configuration in saunf/saunf.org"
     Just config ->
       case val of
-        Readme Push -> pushReadmeFile config org
+        Readme Push -> pushReadmeFile config org readmeDest
         _ -> putStrLn "Not implemented yet :-("

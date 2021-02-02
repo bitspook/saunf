@@ -43,9 +43,9 @@ issues.
 :END:
 
 #+begin_src markdown
-  # $$title$$
+  # $title$
 
-  $$description$$
+  $description$
 
   ## $#features$
 #+end_src
