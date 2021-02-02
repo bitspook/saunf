@@ -1,7 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Saunf where
+module Saunf
+  ( pushReadmeFile,
+    getConfig,
+  )
+where
 
--- Create a readme doc, and push it to readme.md
-pushReadmeFile :: IO ()
-pushReadmeFile = putStrLn "Implementation in progress"
+import Saunf.Config
+import Saunf.Readme (pushReadmeFile)
+import Saunf.Shared
+import Text.Pandoc
+
+getConfig :: Pandoc -> Maybe SaunfConfig
+getConfig (Pandoc _ bs) = SaunfConfig <$> findSection "saunf-config" bs

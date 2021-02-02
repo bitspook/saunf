@@ -1,9 +1,12 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import Saunf
 import Options.Applicative
+import qualified Data.Text.IO as T
+import Text.Pandoc as P
 
-data CliOptions = Readme ReadmeOptions deriving (Show)
+newtype CliOptions = Readme ReadmeOptions deriving (Show)
 
 data ReadmeOptions
   = Push -- Push changes to readme
@@ -26,7 +29,15 @@ cliParser = info (cliOptions <**> helper) (fullDesc <> header "Tasty project man
 
 main :: IO ()
 main = do
+  pmpText <- T.readFile "./saunf/saunf.org"
+  org' <- P.runIO $ readOrg def pmpText
+  org <- P.handleError org'
   val <- execParser cliParser
-  case val of
-    Readme Push -> pushReadmeFile
-    _ -> putStrLn "Not implemented yet :-("
+
+  let config' = getConfig org
+  case config' of
+    Nothing -> error "Could not find Saunf configuration in saunf/saunf.org"
+    Just config ->
+      case val of
+        Readme Push -> pushReadmeFile config org
+        _ -> putStrLn "Not implemented yet :-("

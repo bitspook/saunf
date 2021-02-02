@@ -10,6 +10,9 @@ in sync with e.g github-issues for creating issues for user stories and readme.m
 to maintain a good front-facing documentation.
 
 * Features
+:PROPERTIES:
+:CUSTOM_ID: features
+:END:
 
 ** Documentation management
 
@@ -30,10 +33,13 @@ issues.
 
 
 * Configuration
+:PROPERTIES:
+:CUSTOM_ID: saunf-config
+:END:
 
 ** Readme
 :PROPERTIES:
-:ID:       79e80db6-a1bd-4476-b6e6-3644c07ade27
+:CUSTOM_ID: readme
 :END:
 
 #+begin_src markdown

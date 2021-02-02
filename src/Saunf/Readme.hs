@@ -1,54 +1,34 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Saunf.Readme
   ( findDescription,
-    findSection,
     getReadmeTemplate,
-    getConfig,
     soberizeReadmeTemplate,
     parseInjectedSectionName,
     setSectionHeaderLevel,
-    SaunfConfig (..),
+    pushReadmeFile,
   )
 where
 
-import Data.Maybe (fromMaybe)
+import Data.Aeson
 import Data.List (find)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
-import qualified Debug.Trace as D
-import Text.Pandoc
+import qualified Data.Text.IO as T
+import Saunf.Config
+import Saunf.Shared
+import Text.DocLayout (render)
+import Text.Pandoc as P
 import Text.Pandoc.Shared
+import Text.Pandoc.Writers.Shared
 import Text.Parsec as Parsec
-
--- Create a readme doc, and push it to readme.md
-pushReadmeFile :: IO ()
-pushReadmeFile = putStrLn "Implementation in progress"
 
 findDescription :: Pandoc -> Maybe [Block]
 findDescription (Pandoc _ bs) = case takeWhile (not . isHeaderBlock) bs of
   [] -> Nothing
   xs -> Just xs
-
-findSection :: Text -> [Block] -> Maybe [Block]
-findSection id bs = case dropWhile isNotMatch bs of
-  [] -> Nothing
-  h@(Header level _ _) : xs -> Just $ h : takeWhile (\x -> (not . isHeaderBlock) x || isNotHeaderOfLevel level x) xs
-  _ -> Nothing
-  where
-    isNotMatch x = case x of
-      Header _ (id', _, _) _ -> id /= id'
-      _ -> True
-    isNotHeaderOfLevel lvl x = case x of
-      (Header lvl' _ _) -> lvl < lvl'
-      _ -> False
-
-newtype SaunfConfig
-  = SaunfConfig [Block]
-  deriving (Show, Eq)
-
-getConfig :: Pandoc -> Maybe SaunfConfig
-getConfig (Pandoc _ bs) = SaunfConfig <$> findSection "saunf-config" bs
 
 -- | Get the readme template string from the config if it is present
 getReadmeTemplate :: SaunfConfig -> Maybe Text
@@ -80,14 +60,13 @@ parseInjectedSectionName xs = either (const Nothing) (Just . pack) $ parse nameP
 -- will be shifted accordingly
 setSectionHeaderLevel :: Int -> [Block] -> [Block]
 setSectionHeaderLevel n xs = case xs of
-  ((Header sectionLvl attr inner):bs) -> Header n attr inner : (shiftHeader <$> bs)
+  ((Header sectionLvl attr inner) : bs) -> Header n attr inner : (shiftHeader <$> bs)
     where
       delta = n - sectionLvl
       shiftHeader b = case b of
         Header lvl a i -> Header (lvl + delta) a i
         _ -> b
   _ -> xs
-
 
 -- | Evaluate all Saunf syntax in readme template to produce a valid Pandoc
 -- template. It parses readme template as markdown, operate on it to remove all
@@ -100,7 +79,34 @@ soberizeReadmeTemplate tStr pmpBlocks = do
     soberize :: [Block] -> Block -> [Block]
     soberize bs a = case a of
       (Header lvl _ xs) -> setSectionHeaderLevel lvl blks
-        where blks = case parseInjectedSectionName (stringify xs) of
-                Nothing -> [a]
-                Just name -> fromMaybe [] (findSection name bs)
+        where
+          blks = case parseInjectedSectionName (stringify xs) of
+            Nothing -> [a]
+            Just name -> fromMaybe [] (findSection name bs)
       _ -> [a]
+
+data ReadmeContext = ReadmeContext
+  { readmeTitle :: Text,
+    readmeDescription :: Text
+  }
+
+instance ToJSON ReadmeContext where
+  toJSON e =
+    object
+      [ "title" .= readmeTitle e,
+        "description" .= readmeDescription e
+      ]
+
+-- Create a readme doc, and push it to readme.md
+pushReadmeFile :: SaunfConfig -> Pandoc -> IO ()
+pushReadmeFile conf (Pandoc meta pmpBs) = do
+  let template = fromMaybe (error "Couldn't find readme template") (getReadmeTemplate conf)
+  soberTemplate' <- P.runIO $ soberizeReadmeTemplate template pmpBs
+  soberTemplate <- P.handleError soberTemplate'
+
+  let title = lookupMetaString "title" meta
+  let context = ReadmeContext title ""
+  tc <- compileTemplate "readme.md" soberTemplate
+  case tc of
+    Left e -> error e
+    Right t -> T.putStrLn $ render Nothing $ renderTemplate t (toJSON context)
