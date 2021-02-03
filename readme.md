@@ -69,3 +69,53 @@ At its bare minimum, Saunf should
     -   \[ \] Push changes to github
     -   \[ \] Pull new issues from github
     -   \[ \] Pull changes from github
+
+## Usage
+
+### CLI
+
+Saunf CLI usage can be obtained using running `saunf --help`
+
+### Saunf Doc
+
+Saunf is in its infancy, so things are likely to change wildly. For now,
+this how you use saunf:
+
+1.  Create `saunf/saunf.org` in root of your project. This file is
+    referred to as `saunf-doc`
+
+2.  Describe your project using org-mode markup in saunf-doc
+
+3.  Create a section with `CUSTOM_ID = saunf-conf` property. This is
+    where all the supported saunf conf lives. Title of this section
+    doesn't matter. Saunf uses `CUSTOM_ID` property to identify sections
+
+4.  Create a section within `saunf-conf` section with
+    `CUSTOM_ID = readme`.
+
+5.  Create a `begin_src` block within `readme` section. This is your
+    readme template. This is a standard [pandoc
+    template](https://hackage.haskell.org/package/pandoc/docs/Text-Pandoc-Templates.html)
+    with small saunf-specific syntax.
+
+    Within the readme template, you have access to `title` and
+    `description` variables, which use can use as `Saunf`
+
+    1.  `title` is the title set with `#+title:` attribute in saunf-doc
+    2.  `description` is the text on top of your saunf-doc before any
+        section starts
+
+    Following saunf-specific syntax is available:
+
+    1.  `Section Injection`: Saunf allow you to inject entire sections
+        from your saunf-doc inside the readme. Level of the section in
+        saunf-doc is irrelevant; you can mention the level of injected
+        section like this:
+
+            ### $#usage$
+
+        In this example, `usage` is the `CUSTOM_ID` of the section
+        getting injected, and `3` is the level at which it will be
+        injected. i.e `H3` will be used for the heading of `usage`
+        section, and all its sub-headings will be set as
+        `3 + <subheading-level>`

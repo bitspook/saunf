@@ -12,4 +12,4 @@ import Saunf.Shared
 import Text.Pandoc
 
 getConfig :: Pandoc -> Maybe SaunfConfig
-getConfig (Pandoc _ bs) = SaunfConfig <$> findSection "saunf-config" bs
+getConfig (Pandoc _ bs) = SaunfConfig <$> findSection "saunf-conf" bs
