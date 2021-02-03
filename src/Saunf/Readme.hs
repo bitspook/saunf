@@ -51,7 +51,7 @@ parseInjectedSectionName xs = either (const Nothing) (Just . pack) $ parse nameP
     nameParser = do
       _ <- Parsec.char '$'
       _ <- Parsec.char '#'
-      name <- Parsec.many Parsec.letter
+      name <- Parsec.many (Parsec.letter <|> Parsec.char '-' <|> Parsec.char '_')
       _ <- Parsec.char '$'
       return name
 
@@ -105,7 +105,7 @@ pushReadmeFile conf pmpDoc@(Pandoc meta pmpBs) dest = do
   soberTemplate <- P.handleError soberTemplate'
 
   let title = lookupMetaString "title" meta
-  description' <- P.runIO $ writeMarkdown def $ Pandoc mempty $ fromMaybe mempty $ findDescription pmpDoc
+  description' <- P.runIO $ writeMarkdown def $ Pandoc meta $ fromMaybe mempty $ findDescription pmpDoc
   description <- P.handleError description'
 
   let context = ReadmeContext title description
