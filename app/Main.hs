@@ -38,7 +38,7 @@ main = do
   saunfDoc <- P.handleError saunfDoc'
   val <- execParser cliParser
 
-  let config' = getConfig saunfDoc
+  let config' = runReader getConfig (SaunfEnv saunfDoc mempty)
   case config' of
     Nothing -> error "Could not find Saunf configuration in saunf/saunf.org"
     Just config ->
