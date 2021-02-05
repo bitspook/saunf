@@ -3,9 +3,11 @@
 
 module SharedSpec where
 
+import Control.Monad.Reader
 import Saunf.Shared
+import Saunf.Types
 import Test.Hspec
-import Text.Pandoc as P
+import Text.Pandoc as P hiding (Reader)
 
 inlines :: Block -> [Inline]
 inlines = \case
@@ -15,29 +17,27 @@ inlines = \case
 
 spec :: Spec
 spec = do
-  describe "findSection" $ do
-    it "returns Nothing if section with given id is not found" $ do
+  describe "findSections" $ do
+    it "returns Nothing if section with given matcher is not found" $ do
       orgFile' <- P.runIO (readOrg def "#+title: Title *from* Meta\n\nThis is the description\n\n* First Section ")
-      let (Pandoc _ orgFile) = either mempty id orgFile'
-      let section = findSection "my-section" orgFile
+      let doc = either mempty id orgFile'
+      let sections = runReader (findSections (isHeaderWithId "my-section")) (SaunfEnv doc mempty)
 
-      section `shouldBe` Nothing
+      sections `shouldBe` []
 
     it "returns all blocks b/w matched heading and next heading of same or higher level" $ do
       orgFile' <-
         P.runIO
           ( readOrg
               def
-              "#+title: Title *from* Meta\n\n\
-              \This is the description\n\n\
-              \** First Section\n:PROPERTIES:\n\
+              "** First Section\n:PROPERTIES:\n\
               \:CUSTOM_ID: my-section\n\
               \:END:\n\
               \First section text\n\
               \* Second Section"
           )
-      let (Pandoc _ orgFile) = either mempty id orgFile'
-      let section = findSection "my-section" orgFile
+      let doc = either mempty id orgFile'
+      let sections = runReader (findSections (isHeaderWithId "my-section")) (SaunfEnv doc mempty)
 
       expectedDoc' <-
         P.runIO
@@ -51,7 +51,7 @@ spec = do
           )
       let (Pandoc _ expectedSection) = either mempty id expectedDoc'
 
-      section `shouldBe` Just expectedSection
+      sections `shouldBe` [Section expectedSection]
 
     it "returns first matched section if multiple sections with same ID are present" $ do
       orgFile' <-
@@ -70,8 +70,8 @@ spec = do
               \:CUSTOM_ID: my-section\n\
               \:END:\n"
           )
-      let (Pandoc _ orgFile) = either mempty id orgFile'
-      let section = findSection "my-section" orgFile
+      let doc = either mempty id orgFile'
+      let section = runReader (findSections (isHeaderWithId "my-section")) (SaunfEnv doc mempty)
 
       expectedDoc' <-
         P.runIO
@@ -85,4 +85,22 @@ spec = do
           )
       let (Pandoc _ expectedSection) = either mempty id expectedDoc'
 
-      section `shouldBe` Just expectedSection
+      section `shouldBe` [Section expectedSection]
+
+    describe "sectionsWithProperties" $ do
+      it "returns all the sections which has provided properties" $ do
+        orgFile' <-
+          P.runIO
+            ( readOrg
+                def
+                "* Original Section\n\
+                \:PROPERTIES:\n\
+                \:KEY1: val1\n\
+                \:END:\n\
+                \* Duplicate Section\n"
+            )
+
+        let doc = either mempty id orgFile'
+        let sections = runReader (sectionsWithProperties []) (SaunfEnv doc mempty)
+
+        pending

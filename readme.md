@@ -12,8 +12,8 @@ single [org](https://orgmode.org/) file:
 
 -   I write a lot of introductory documentation. Saunf should allow me
     to pick parts from this document and build a readme file
--   I keep a list of todo items within the [saunf-doc](#saunf-doc).
-    Saunf should allow me to sync these with Github issues.
+-   I keep a list of todo items within the *saunf-doc*. Saunf should
+    allow me to sync these with Github issues.
 -   I maintain a glossary for every project to establish a ubiquitous
     language. Saunf should enable me to utilize this glossary to more
     effectively achieve my goal of establishing a ubiquitous language.

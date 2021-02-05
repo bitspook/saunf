@@ -122,6 +122,9 @@ At its bare minimum, Saunf should
   - [ ] Pull changes from github
 
 * Epics
+:PROPERTIES:
+:CATEGORY: epics
+:END:
 
 ** Readme
 
@@ -148,8 +151,11 @@ so that github users can see the term definition by hovering over it.
 :PROPERTIES:
 :CUSTOM_ID: glossary
 :END:
-- <<saunf-doc>> :: The document (org-mode file) which keeps all the documentation
+- <<Saunf-doc>> :: The document (org-mode file) which keeps all the documentation
   related to the project.
+- <<Issue>> :: A request filed by a user to request a change, report a bug, or
+  ask a question
+- <<Epic>> :: A named collection of [[issue][issues]]
 
 * Configuration
 :PROPERTIES:

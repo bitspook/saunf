@@ -2,6 +2,9 @@
 module Main where
 
 import Saunf
+import Saunf.Shared
+import Saunf.Types
+import Control.Monad.Reader
 import Options.Applicative
 import qualified Data.Text.IO as T
 import Text.Pandoc as P
@@ -31,14 +34,17 @@ main :: IO ()
 main = do
   let readmeDest = "./readme.md"
   pmpText <- T.readFile "./saunf/saunf.org"
-  org' <- P.runIO $ readOrg def pmpText
-  org <- P.handleError org'
+  saunfDoc' <- P.runIO $ readOrg def pmpText
+  saunfDoc <- P.handleError saunfDoc'
   val <- execParser cliParser
 
-  let config' = getConfig org
+  let config' = getConfig saunfDoc
   case config' of
     Nothing -> error "Could not find Saunf configuration in saunf/saunf.org"
     Just config ->
-      case val of
-        Readme Push -> pushReadmeFile config org readmeDest
-        _ -> putStrLn "Not implemented yet :-("
+      let
+        env = SaunfEnv saunfDoc config
+      in
+        case val of
+          Readme Push -> runReaderT (pushReadmeFile readmeDest) env
+          _ -> putStrLn "Not implemented yet :-("

@@ -24,8 +24,10 @@ common core
     , text
     , prettyprinter
     , containers
+    , mtl
     , pandoc
     , pandoc-types
+    , containers
       -- Same versino of parsec as pandoc. I'd prefer megaparsec but am feeling
       -- anxious about adding a dependency for a small usecase. saunf use parsec
       -- only to parse special syntax from readme template
@@ -65,7 +67,8 @@ library
     Saunf,
     Saunf.Readme,
     Saunf.Shared,
-    Saunf.Config
+    Saunf.Types,
+    Saunf.Issue
   other-modules:
   hs-source-dirs:   src
   default-language: Haskell2010
@@ -100,8 +103,11 @@ test-suite test-suite
    , pandoc
    , pandoc-types
    , saunf
+   , mtl
+   , containers
   other-modules:
-    ReadmeSpec
-    SaunfSpec
+    -- ReadmeSpec
+    -- SaunfSpec
     SharedSpec
+    -- IssueSpec
   default-language: Haskell2010
