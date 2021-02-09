@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Saunf
   ( pushReadmeFile,
@@ -7,14 +8,14 @@ module Saunf
 where
 
 import Control.Monad.Reader
-import Saunf.Readme (pushReadmeFile)
+import Saunf.Readme (getReadmeTemplate, pushReadmeFile)
 import Saunf.Shared
 import Saunf.Types
 
-getConfig :: Reader SaunfEnv (Maybe SaunfConf)
+getConfig :: Reader SaunfEnv (Either SaunfConfError SaunfConf)
 getConfig = do
   sections <- findSections (isHeaderWithId "saunf-conf")
-  return $
-    SaunfConf <$> case sections of
-      (Section x : _) -> Just x
-      _ -> Nothing
+  return $ case sections of
+    [x] -> Right $ SaunfConf (getReadmeTemplate x)
+    [] -> Left ConfNotFound
+    _ -> Left ConflictingConf

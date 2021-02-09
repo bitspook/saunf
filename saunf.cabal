@@ -89,6 +89,7 @@ executable saunf
     -with-rtsopts=-N
     -flate-specialise
     -fspecialise-aggressively
+    -Werror
 
 test-suite test-suite
   type: exitcode-stdio-1.0
@@ -106,8 +107,8 @@ test-suite test-suite
    , mtl
    , containers
   other-modules:
-    -- ReadmeSpec
-    -- SaunfSpec
+    ReadmeSpec
+    SaunfSpec
     SharedSpec
-    -- IssueSpec
+    IssueSpec
   default-language: Haskell2010

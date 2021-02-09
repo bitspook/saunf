@@ -5,7 +5,7 @@
 module Saunf.Readme
   ( findDescription,
     getReadmeTemplate,
-    soberizeReadmeTemplate,
+    soberReadmeTemplate,
     parseInjectedSectionName,
     setSectionHeaderLevel,
     pushReadmeFile,
@@ -31,14 +31,13 @@ findDescription (Pandoc _ bs) = case takeWhile (not . isHeaderBlock) bs of
   [] -> Nothing
   xs -> Just xs
 
--- | Get the readme template string from the config if it is present
-getReadmeTemplate :: Reader SaunfEnv (Maybe Text)
-getReadmeTemplate = do
-  readmeSection <- findSections (isHeaderWithId "readme")
-  return $ case readmeSection of
+-- | Get the readme template string from given config-$Section$
+getReadmeTemplate :: Section -> Maybe Text
+getReadmeTemplate (Section bs) = case readmeSection of
     [Section xs] -> firstCodeBlock xs
     _ -> Nothing
   where
+    readmeSection = runReader (findSections (isHeaderWithId "readme")) (SaunfEnv (Pandoc mempty bs) mempty)
     isCodeBlock x = case x of
       (CodeBlock _ _) -> True
       _ -> False
@@ -92,12 +91,16 @@ expandToSection a = do
 -- | Evaluate all Saunf syntax in readme template to produce a valid Pandoc
 -- template. It parses readme template as markdown, operate on it to remove all
 -- special syntax, and return back a markdown string
-soberizeReadmeTemplate :: (PandocMonad m) => Text -> ReaderT SaunfEnv m Text
-soberizeReadmeTemplate tStr = do
-  (Pandoc tMeta tBlocks) <- readMarkdown def tStr
-  env <- ask
-  let expandedBlocks :: [Block] = foldl (\x (Section xs) -> x <> xs) [] (map ($ env) (runReader . expandToSection <$> tBlocks))
-  writeMarkdown def (Pandoc tMeta expandedBlocks)
+soberReadmeTemplate :: (PandocMonad m) => ReaderT SaunfEnv m Text
+soberReadmeTemplate = do
+  tStr' <- asks (readmeTemplate . saunfConf)
+  case tStr' of
+    Nothing -> error "Template not found"
+    (Just tStr) -> do
+      (Pandoc tMeta tBlocks) <- readMarkdown def tStr
+      env <- ask
+      let expandedBlocks :: [Block] = foldl (\x (Section xs) -> x <> xs) [] (map ($ env) (runReader . expandToSection <$> tBlocks))
+      writeMarkdown def (Pandoc tMeta expandedBlocks)
 
 data ReadmeContext = ReadmeContext
   { readmeTitle :: Text,
@@ -117,10 +120,7 @@ pushReadmeFile dest = do
   env <- ask
   pmpDoc@(Pandoc meta _) <- asks saunfDoc
 
-  let template' = runReader getReadmeTemplate env
-  let template = fromMaybe (error "Couldn't find readme template") template'
-
-  soberTemplate' <- liftIO $ P.runIO $ runReaderT (soberizeReadmeTemplate template) env
+  soberTemplate' <- liftIO $ P.runIO $ runReaderT soberReadmeTemplate env
   soberTemplate <- liftIO $ P.handleError soberTemplate'
 
   let title = lookupMetaString "title" meta

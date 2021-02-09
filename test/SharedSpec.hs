@@ -20,7 +20,7 @@ spec = do
   describe "findSections" $ do
     it "returns Nothing if section with given matcher is not found" $ do
       orgFile' <- P.runIO (readOrg def "#+title: Title *from* Meta\n\nThis is the description\n\n* First Section ")
-      let doc = either mempty id orgFile'
+      doc <- P.handleError orgFile'
       let sections = runReader (findSections (isHeaderWithId "my-section")) (SaunfEnv doc mempty)
 
       sections `shouldBe` []
@@ -36,7 +36,7 @@ spec = do
               \First section text\n\
               \* Second Section"
           )
-      let doc = either mempty id orgFile'
+      doc <- P.handleError orgFile'
       let sections = runReader (findSections (isHeaderWithId "my-section")) (SaunfEnv doc mempty)
 
       expectedDoc' <-
@@ -49,7 +49,7 @@ spec = do
               \:END:\n\
               \First section text"
           )
-      let (Pandoc _ expectedSection) = either mempty id expectedDoc'
+      (Pandoc _ expectedSection) <- P.handleError expectedDoc'
 
       sections `shouldBe` [Section expectedSection]
 
@@ -70,7 +70,7 @@ spec = do
               \:CUSTOM_ID: my-section\n\
               \:END:\n"
           )
-      let doc = either mempty id orgFile'
+      doc <- P.handleError orgFile'
       let section = runReader (findSections (isHeaderWithId "my-section")) (SaunfEnv doc mempty)
 
       expectedDoc' <-
@@ -83,7 +83,7 @@ spec = do
               \:END:\n\
               \Original section text"
           )
-      let (Pandoc _ expectedSection) = either mempty id expectedDoc'
+      (Pandoc _ expectedSection) <- P.handleError expectedDoc'
 
       section `shouldBe` [Section expectedSection]
 
@@ -100,7 +100,7 @@ spec = do
                 \* Duplicate Section\n"
             )
 
-        let doc = either mempty id orgFile'
+        doc <- P.handleError orgFile'
         let sections = runReader (sectionsWithProperties []) (SaunfEnv doc mempty)
 
         pending

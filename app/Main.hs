@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
-import Saunf
-import Saunf.Shared
-import Saunf.Types
 import Control.Monad.Reader
-import Options.Applicative
 import qualified Data.Text.IO as T
+import Options.Applicative
+import Saunf
+import Saunf.Types
 import Text.Pandoc as P
 
 newtype CliOptions = Readme ReadmeOptions deriving (Show)
@@ -34,17 +34,14 @@ main :: IO ()
 main = do
   let readmeDest = "./readme.md"
   pmpText <- T.readFile "./saunf/saunf.org"
-  saunfDoc' <- P.runIO $ readOrg def pmpText
-  saunfDoc <- P.handleError saunfDoc'
+  saunfDoc <- P.handleError =<< P.runIO (readOrg def pmpText)
   val <- execParser cliParser
 
-  let config' = runReader getConfig (SaunfEnv saunfDoc mempty)
-  case config' of
-    Nothing -> error "Could not find Saunf configuration in saunf/saunf.org"
-    Just config ->
-      let
-        env = SaunfEnv saunfDoc config
-      in
-        case val of
-          Readme Push -> runReaderT (pushReadmeFile readmeDest) env
-          _ -> putStrLn "Not implemented yet :-("
+  case runReader getConfig (SaunfEnv saunfDoc mempty) of
+    Left ConfNotFound -> error "Configuration not found"
+    Left ConflictingConf -> error "Could not decide which conf to use. Please check if there are more than one conf sections present"
+    Right config -> do
+      let env = SaunfEnv saunfDoc config
+      case val of
+        Readme Push -> runReaderT (pushReadmeFile readmeDest) env
+        _ -> putStrLn "Not implemented yet :-("
