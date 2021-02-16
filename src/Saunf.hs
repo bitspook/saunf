@@ -14,7 +14,7 @@ import Saunf.Types
 
 getConfig :: Reader SaunfEnv (Either SaunfConfError SaunfConf)
 getConfig = do
-  sections <- findSections (isHeaderWithId "saunf-conf")
+  sections <- filterSections (isHeaderWithId "saunf-conf")
   return $ case sections of
     [x] -> Right $ SaunfConf (getReadmeTemplate x)
     [] -> Left ConfNotFound

@@ -37,7 +37,7 @@ getReadmeTemplate (Section bs) = case readmeSection of
     [Section xs] -> firstCodeBlock xs
     _ -> Nothing
   where
-    readmeSection = runReader (findSections (isHeaderWithId "readme")) (SaunfEnv (Pandoc mempty bs) mempty)
+    readmeSection = runReader (filterSections (isHeaderWithId "readme")) (SaunfEnv (Pandoc mempty bs) mempty)
     isCodeBlock x = case x of
       (CodeBlock _ _) -> True
       _ -> False
@@ -79,7 +79,7 @@ expandToSection a = do
       where
         grabSection :: Text -> Reader SaunfEnv Section
         grabSection id = do
-          sections <- findSections (isHeaderWithId id)
+          sections <- filterSections (isHeaderWithId id)
           case sections of
             [] -> return $ Section []
             (s : _) -> return s

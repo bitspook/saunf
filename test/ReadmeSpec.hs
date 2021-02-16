@@ -53,7 +53,7 @@ spec = do
               \No CUSTOM_ID though"
           )
       orgFile <- P.handleError orgFile'
-      let configSection = runReader (findSections (isHeaderWithId "saunf-conf")) (SaunfEnv orgFile mempty)
+      let configSection = runReader (filterSections (isHeaderWithId "saunf-conf")) (SaunfEnv orgFile mempty)
       let template = getReadmeTemplate (head configSection)
 
       template `shouldBe` Nothing
@@ -76,7 +76,7 @@ spec = do
               \No code block for template"
           )
       orgFile <- P.handleError orgFile'
-      let configSection = runReader (findSections (isHeaderWithId "saunf-conf")) (SaunfEnv orgFile mempty)
+      let configSection = runReader (filterSections (isHeaderWithId "saunf-conf")) (SaunfEnv orgFile mempty)
       let template = getReadmeTemplate (head configSection)
 
       template `shouldBe` Nothing
@@ -103,7 +103,7 @@ spec = do
               \#+end_src\n"
           )
       orgFile <- P.handleError orgFile'
-      let configSection = runReader (findSections (isHeaderWithId "saunf-conf")) (SaunfEnv orgFile mempty)
+      let configSection = runReader (filterSections (isHeaderWithId "saunf-conf")) (SaunfEnv orgFile mempty)
       let template = getReadmeTemplate (head configSection)
 
       let expectedDoc =

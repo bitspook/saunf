@@ -106,9 +106,11 @@ test-suite test-suite
    , saunf
    , mtl
    , containers
+   , text
   other-modules:
     ReadmeSpec
     SaunfSpec
     SharedSpec
     IssueSpec
+    Shared
   default-language: Haskell2010
