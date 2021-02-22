@@ -23,7 +23,8 @@ spec = do
     it "returns all blocks b/w matched heading and next heading of same or higher level" $ do
       doc <-
         readOrg'
-          "** First Section\n:PROPERTIES:\n\
+          "** First Section\
+          \\n:PROPERTIES:\n\
           \:CUSTOM_ID: my-section\n\
           \:END:\n\
           \First section text\n\
@@ -38,7 +39,7 @@ spec = do
           \:END:\n\
           \First section text"
 
-      sections `shouldBe` [Section expectedSection]
+      sections `shouldBe` [Section (head expectedSection) (tail expectedSection)]
 
     it "returns all matched sections" $ do
       doc <-
@@ -78,7 +79,10 @@ spec = do
                 \:END:"
             )
 
-      section `shouldBe` [Section expectedSection1, Section expectedSection2]
+      section
+        `shouldBe` [ Section (head expectedSection1) (tail expectedSection1),
+                     Section (head expectedSection2) (tail expectedSection2)
+                   ]
 
     describe "sectionsWithProperties" $ do
       it "returns all the sections which has provided properties" $ do
@@ -105,6 +109,49 @@ spec = do
         let nonSections = runReader (sectionsWithProperties [("key3", "val3")]) (SaunfEnv doc mempty)
 
         nonSections `shouldBe` []
-        sections1 `shouldBe` [Section [Header 1 ("", [], [("key1", "val1")]) [Str "Section", Space, Str "1"]], Section [Header 1 ("", [], [("key1", "val1"), ("key2", "val2")]) [Str "Section", Space, Str "1+2"]]]
-        sections1n2 `shouldBe` [Section [Header 1 ("", [], [("key1", "val1"), ("key2", "val2")]) [Str "Section", Space, Str "1+2"]]]
-        sections2 `shouldBe` [Section [Header 1 ("", [], [("key1", "val1"), ("key2", "val2")]) [Str "Section", Space, Str "1+2"]], Section [Header 1 ("", [], [("key2", "val2")]) [Str "Section", Space, Str "2"]]]
+        sections1 `shouldBe` [Section (Header 1 ("", [], [("key1", "val1")]) [Str "Section", Space, Str "1"]) [], Section (Header 1 ("", [], [("key1", "val1"), ("key2", "val2")]) [Str "Section", Space, Str "1+2"]) []]
+        sections1n2 `shouldBe` [Section (Header 1 ("", [], [("key1", "val1"), ("key2", "val2")]) [Str "Section", Space, Str "1+2"]) []]
+        sections2 `shouldBe` [Section (Header 1 ("", [], [("key1", "val1"), ("key2", "val2")]) [Str "Section", Space, Str "1+2"]) [], Section (Header 1 ("", [], [("key2", "val2")]) [Str "Section", Space, Str "2"]) []]
+
+  describe "setSectionHeaderLevel" $ do
+    it "sets the section Header's level to given level" $ do
+      orgFile' <-
+        P.runIO
+          (readOrg def "** Features\nAwesome features.")
+      (Pandoc _ (h:bs)) <- P.handleError orgFile'
+      let section = Section h bs
+      let Section header1 _ = setSectionHeaderLevel 3 section
+      let Section header2 _ = setSectionHeaderLevel 1 section
+      let Section header3 _ = setSectionHeaderLevel 7 section
+
+      case header1 of
+        Header lvl _ _ -> lvl `shouldBe` 3
+        x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning
+      case header2 of
+        Header lvl _ _ -> lvl `shouldBe` 1
+        x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning
+      case header3 of
+        Header lvl _ _ -> lvl `shouldBe` 7
+        x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning
+
+    it "shifts every sub-Header's level properly" $ do
+      (Pandoc _ (h:bs)) <-
+        P.handleError
+          =<< P.runIO
+            ( readMarkdown
+                def
+                "## Header\n\
+                \### Sub header\n\
+                \#### Sub Sub header\n"
+            )
+      let Section header (sHeader : ssHeader : _) = setSectionHeaderLevel 4 (Section h bs)
+
+      case header of
+        Header lvl _ _ -> lvl `shouldBe` 4
+        x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning
+      case sHeader of
+        Header lvl _ _ -> lvl `shouldBe` 5
+        x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning
+      case ssHeader of
+        Header lvl _ _ -> lvl `shouldBe` 6
+        x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning

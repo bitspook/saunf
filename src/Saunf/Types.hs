@@ -19,6 +19,10 @@ instance Monoid SaunfConf where
 -- | Pandoc don't have a concept of sections, but org-mode do. A section is
 -- | essentially everything that follows a header (inclusive), until another
 -- | header of same or higher level
-newtype Section = Section [Block] deriving (Show, Eq)
+data Section = Section { sectionTitle :: Block, sectionBody :: [Block] } deriving (Show, Eq)
 
 data SaunfEnv = SaunfEnv {saunfDoc :: Pandoc, saunfConf :: SaunfConf} deriving (Show)
+
+newtype Issue = Issue Section
+
+data Epic = Epic { epicTitle :: Text, epicIssues :: [Issue] }

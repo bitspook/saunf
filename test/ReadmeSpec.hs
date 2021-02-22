@@ -121,49 +121,6 @@ spec = do
       parseInjectedSectionName "$#section$" `shouldBe` Just "section"
       parseInjectedSectionName "$#yoyo$" `shouldBe` Just "yoyo"
 
-  describe "adjustSectionLevel" $ do
-    it "sets the section Header's level to given level" $ do
-      orgFile' <-
-        P.runIO
-          (readOrg def "** Features\nAwesome features.")
-      (Pandoc _ bs) <- P.handleError orgFile'
-      let section = Section bs
-      let Section (header1 : _) = setSectionHeaderLevel 3 section
-      let Section (header2 : _) = setSectionHeaderLevel 1 section
-      let Section (header3 : _) = setSectionHeaderLevel 7 section
-
-      case header1 of
-        Header lvl _ _ -> lvl `shouldBe` 3
-        x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning
-      case header2 of
-        Header lvl _ _ -> lvl `shouldBe` 1
-        x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning
-      case header3 of
-        Header lvl _ _ -> lvl `shouldBe` 7
-        x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning
-
-    it "shifts every sub-Header's level properly" $ do
-      orgFile' <-
-        P.runIO
-          ( readMarkdown
-              def
-              "## Header\n\
-              \### Sub header\n\
-              \#### Sub Sub header\n"
-          )
-      (Pandoc _ bs) <- P.handleError orgFile'
-      let Section (header : sHeader : ssHeader : _) = setSectionHeaderLevel 4 (Section bs)
-
-      case header of
-        Header lvl _ _ -> lvl `shouldBe` 4
-        x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning
-      case sHeader of
-        Header lvl _ _ -> lvl `shouldBe` 5
-        x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning
-      case ssHeader of
-        Header lvl _ _ -> lvl `shouldBe` 6
-        x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning
-
   describe "soberReadmeTemplate" $ do
     it "removes the section if it is not found in pmp-doc" $ do
       orgFile' <-

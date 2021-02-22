@@ -7,7 +7,6 @@ module Saunf.Readme
     getReadmeTemplate,
     soberReadmeTemplate,
     parseInjectedSectionName,
-    setSectionHeaderLevel,
     pushReadmeFile,
   )
 where
@@ -33,8 +32,8 @@ findDescription (Pandoc _ bs) = case takeWhile (not . isHeaderBlock) bs of
 
 -- | Get the readme template string from given config-$Section$
 getReadmeTemplate :: Section -> Maybe Text
-getReadmeTemplate (Section bs) = case readmeSection of
-    [Section xs] -> firstCodeBlock xs
+getReadmeTemplate (Section _ bs) = case readmeSection of
+    [Section _ xs] -> firstCodeBlock xs
     _ -> Nothing
   where
     readmeSection = runReader (filterSections (isHeaderWithId "readme")) (SaunfEnv (Pandoc mempty bs) mempty)
@@ -57,36 +56,24 @@ parseInjectedSectionName xs = either (const Nothing) (Just . pack) $ parse nameP
       _ <- Parsec.char '$'
       return name
 
--- | Adjust the level of a section to given level. This will make the first
--- Header in section of the given level, and every sub-Header's level
--- will be shifted accordingly
-setSectionHeaderLevel :: Int -> Section -> Section
-setSectionHeaderLevel n (Section xs) = case xs of
-  ((Header sectionLvl attr inner) : bs) -> Section (Header n attr inner : (shiftHeader <$> bs))
-    where
-      delta = n - sectionLvl
-      shiftHeader b = case b of
-        Header lvl a i -> Header (lvl + delta) a i
-        _ -> b
-  _ -> Section xs
-
 -- | Try to expand a Block to a Section if it is a valid injection spot
-expandToSection :: Block -> Reader SaunfEnv Section
-expandToSection a = do
+explodeMaybe :: Block -> Reader SaunfEnv [Block]
+explodeMaybe a = do
   env <- ask
   return $ case a of
-    (Header lvl _ xs) -> setSectionHeaderLevel lvl blks
+    (Header lvl _ xs) -> explodedHeader : explodedBlocks
       where
         grabSection :: Text -> Reader SaunfEnv Section
         grabSection id = do
           sections <- filterSections (isHeaderWithId id)
           case sections of
-            [] -> return $ Section []
+            [] -> return $ Section P.Null []
             (s : _) -> return s
         blks = case parseInjectedSectionName (stringify xs) of
-          Nothing -> Section [a]
+          Nothing -> Section P.Null [a]
           Just name -> runReader (grabSection name) env
-    _ -> Section [a]
+        (Section explodedHeader explodedBlocks) = setSectionHeaderLevel lvl blks
+    _ -> [a]
 
 -- | Evaluate all Saunf syntax in readme template to produce a valid Pandoc
 -- template. It parses readme template as markdown, operate on it to remove all
@@ -95,11 +82,12 @@ soberReadmeTemplate :: (PandocMonad m) => ReaderT SaunfEnv m Text
 soberReadmeTemplate = do
   tStr' <- asks (readmeTemplate . saunfConf)
   case tStr' of
+    -- FIXME: Return "Either ConfError Text" instead of throwing a hissy-fit
     Nothing -> error "Template not found"
     (Just tStr) -> do
       (Pandoc tMeta tBlocks) <- readMarkdown def tStr
       env <- ask
-      let expandedBlocks :: [Block] = foldl (\x (Section xs) -> x <> xs) [] (map ($ env) (runReader . expandToSection <$> tBlocks))
+      let expandedBlocks :: [Block] = foldl (<>) [] (map ($ env) (runReader . explodeMaybe <$> tBlocks))
       writeMarkdown def (Pandoc tMeta expandedBlocks)
 
 data ReadmeContext = ReadmeContext

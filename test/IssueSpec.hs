@@ -13,10 +13,10 @@ spec = do
     it "returns empty list of no epics are present" $ do
       pending
 
-    it "returns all sections with have property CATEGORY=epic" $ do
+    it "returns all sections which have property CATEGORY=epic" $ do
       pending
 
-    it "returns all direct-children of sections which have property CATEGORY=epics" $ do
+    it "returns all sub-sections of sections which have property CATEGORY=epics" $ do
       pending
 
   describe "issues" $ do
@@ -24,4 +24,7 @@ spec = do
       pending
 
     it "returns all child-sections of all epics" $ do
+      pending
+
+    it "returns all sections with CATEGORY=issue" $ do
       pending
