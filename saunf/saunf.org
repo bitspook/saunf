@@ -10,7 +10,8 @@ allowing people I work with to use the tools they like. At its infancy, Saunf
 should enable my current workflow of managing a project from a single [[https://orgmode.org/][org]] file:
 
 - I write a lot of introductory documentation. Saunf should allow me to pick
-  parts from this document and build a readme file
+  parts from this document and build a readme file that don't bore people to
+  death
 - I keep a list of todo items within the [[saunf-doc]]. Saunf should allow me to
   sync these with Github issues.
 - I maintain a glossary for every project to establish a ubiquitous language.
@@ -23,7 +24,7 @@ bird's eye view as architecture diagrams, to which I can then zoom into get more
 detail, zooming in further and further to end up reading source code. A tool
 which would allow me to trace every single line of code, every domain object to
 the requirements that demanded its existence. Projects where things are
-automatically connected.
+connected with minimum effort.
 
 For starters, let's try to bring together the information that usually spreads
 over a gazillion tools with no convergence point.
@@ -56,7 +57,7 @@ how you use saunf:
    syntax.
 
    Within the readme template, you have access to =title= and =description=
-   variables, which use can use as =$title$=
+   variables, which you can use by wrapping them in =$$=-s e.g =$$title$$=
 
    1. =title= is the title set with =#+title:= attribute in saunf-doc
    2. =description= is the text on top of your saunf-doc before any section starts
