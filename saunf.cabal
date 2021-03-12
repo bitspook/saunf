@@ -35,6 +35,7 @@ common core
     , doclayout
     , doctemplates
     , aeson
+    , relude
 
   ghc-options:        -Wall
                       -Wno-name-shadowing
@@ -107,6 +108,7 @@ test-suite test-suite
    , mtl
    , containers
    , text
+   , relude
   other-modules:
     ReadmeSpec
     SaunfSpec
