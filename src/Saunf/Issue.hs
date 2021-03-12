@@ -1,5 +1,16 @@
+{-# LANGUAGE NoImplicitPrelude #-}
+
 module Saunf.Issue where
 
-epics = undefined
+import Control.Monad.Reader
+import Relude
+import Saunf.Types
+import Saunf.Shared (filterSections)
 
-issues = undefined
+hasCategory cat block | trace ("HAS CATEGORY: " ++ show block) False = undefined
+hasCategory cat block = True
+
+issues :: Reader SaunfEnv [Issue]
+issues = do
+  sections <- filterSections (hasCategory "issue")
+  return $ Issue <$> sections

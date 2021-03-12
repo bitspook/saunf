@@ -82,8 +82,8 @@ spec = do
       template `shouldBe` Nothing
 
     it "returns template text from first code block found in readme section" $ do
-      orgFile' <-
-        P.runIO
+      orgFile <-
+        P.handleError =<< P.runIO
           ( readOrg
               def
               "#+title: Title *from* Meta\n\n\
@@ -102,7 +102,6 @@ spec = do
               \## $$#features$$\n\
               \#+end_src\n"
           )
-      orgFile <- P.handleError orgFile'
       let configSection = runReader (filterSections (isHeaderWithId "saunf-conf")) (SaunfEnv orgFile mempty)
       let template = getReadmeTemplate (head configSection)
 

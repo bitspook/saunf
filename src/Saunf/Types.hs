@@ -21,8 +21,10 @@ instance Monoid SaunfConf where
 -- | header of same or higher level
 data Section = Section { sectionTitle :: Block, sectionBody :: [Block] } deriving (Show, Eq)
 
-data SaunfEnv = SaunfEnv {saunfDoc :: Pandoc, saunfConf :: SaunfConf} deriving (Show)
+-- | An $Reader$ environment for very saunf-specific utilities
+data SaunfEnv = SaunfEnv
+  { saunfDoc :: Pandoc, -- ^ The work document. For now Saunf supports just a single org file
+    saunfConf :: SaunfConf -- ^ Saunf Configuration
+  } deriving (Show)
 
-newtype Issue = Issue Section
-
-data Epic = Epic { epicTitle :: Text, epicIssues :: [Issue] }
+newtype Issue = Issue Section deriving (Show, Eq)
