@@ -6,19 +6,9 @@ module Saunf.Issue where
 
 import Control.Monad.Reader
 import Relude
-import Saunf.Shared (filterSections)
+import Saunf.Shared
 import Saunf.Types
 import qualified Text.Pandoc as P
-
-hasCategory :: Text -> P.Block -> Bool
-hasCategory cat block = case block of
-  (P.Header _ (_, _, props) _) -> any (\p -> fst p == "category" && snd p == cat) props
-  _ -> True
-
-isHeaderWithLevel :: Int -> P.Block -> Bool
-isHeaderWithLevel lvl block = case block of
-  (P.Header lvl' _ _) -> lvl == lvl'
-  _ -> False
 
 issues :: Reader SaunfEnv [Issue]
 issues = do

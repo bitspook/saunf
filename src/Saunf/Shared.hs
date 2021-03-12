@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Saunf.Shared where
 
 import Control.Monad.Reader
@@ -10,6 +12,20 @@ import Text.Pandoc.Shared
 isHeaderWithId :: Text -> Block -> Bool
 isHeaderWithId id b = case b of
   (Header _ (id', _, _) _) -> id' == id
+  _ -> False
+
+-- TODO: Write tests for me please
+-- TODO: Take "category" as an argument perhaps, make this hasProperty instead.
+-- There is a good chance that such a function already exists in Pandoc
+hasCategory :: Text -> Block -> Bool
+hasCategory cat block = case block of
+  (Header _ (_, _, props) _) -> any (\p -> fst p == "category" && snd p == cat) props
+  _ -> True
+
+-- TODO: Write tests for me please
+isHeaderWithLevel :: Int -> Block -> Bool
+isHeaderWithLevel lvl block = case block of
+  (Header lvl' _ _) -> lvl == lvl'
   _ -> False
 
 filterSections :: (Block -> Bool) -> Reader SaunfEnv [Section]
