@@ -16,8 +16,12 @@ issues = do
   containers <- filterSections (hasCategory "issues")
   let containerSections = concat $ flip runReader env . issuesFromContainer <$> containers
   sections <- filterSections (hasCategory "issue")
-  return $ (\(Section title body) -> Issue Nothing title body) <$> sections ++ containerSections
+  return $ (\(Section title body) -> Issue (issueId title) title body) <$> sections ++ containerSections
   where
+    issueId :: P.Block -> Maybe Text
+    issueId ( P.Header _ (_, _, props) _) = snd <$> find (\(name, _) -> name == "issue_id") props
+    issueId _ = Nothing
+
     issuesFromContainer :: Section -> Reader SaunfEnv [Section]
     issuesFromContainer = \case
       (Section (P.Header lvl _ _) body) ->
