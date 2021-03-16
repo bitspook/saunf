@@ -46,8 +46,10 @@ spec = do
                 \:END:\n"
             )
       let env = SaunfEnv orgFile mempty
-      let result = (\(Issue s) -> s) <$> runReader issues env
-      let expected = runReader (filterSections (const True)) env
+      let result = runReader issues env
+      let expected =
+            (\(Section title body) -> Issue Nothing title body)
+              <$> runReader (filterSections (const True)) env
 
       result `shouldBe` expected
 
@@ -69,11 +71,11 @@ spec = do
                 \** Issue 2\n"
             )
       let env = SaunfEnv orgFile mempty
-      let result = (\(Issue s) -> s) <$> runReader issues env
+      let result = runReader issues env
 
       let expected =
-            [ Section {sectionTitle = Header 2 ("", [], []) [Str "Issue", Space, Str "1"], sectionBody = []},
-              Section {sectionTitle = Header 2 ("", [], []) [Str "Issue", Space, Str "2"], sectionBody = []}
+            [ Issue Nothing (Header 2 ("", [], []) [Str "Issue", Space, Str "1"]) [],
+              Issue Nothing (Header 2 ("", [], []) [Str "Issue", Space, Str "2"]) []
             ]
 
       result `shouldBe` expected

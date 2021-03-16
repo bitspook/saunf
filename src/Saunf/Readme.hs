@@ -33,8 +33,8 @@ findDescription (Pandoc _ bs) = case takeWhile (not . isHeaderBlock) bs of
 -- | Get the readme template string from given config-$Section$
 getReadmeTemplate :: Section -> Maybe Text
 getReadmeTemplate (Section _ bs) = case readmeSection of
-    [Section _ xs] -> firstCodeBlock xs
-    _ -> Nothing
+  [Section _ xs] -> firstCodeBlock xs
+  _ -> Nothing
   where
     readmeSection = runReader (filterSections (isHeaderWithId "readme")) (SaunfEnv (Pandoc mempty bs) mempty)
     isCodeBlock x = case x of

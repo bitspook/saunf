@@ -19,12 +19,20 @@ instance Monoid SaunfConf where
 -- | Pandoc don't have a concept of sections, but org-mode do. A section is
 -- | essentially everything that follows a header (inclusive), until another
 -- | header of same or higher level
-data Section = Section { sectionTitle :: Block, sectionBody :: [Block] } deriving (Show, Eq)
+data Section = Section {sectionTitle :: Block, sectionBody :: [Block]} deriving (Show, Eq)
 
 -- | An $Reader$ environment for very saunf-specific utilities
 data SaunfEnv = SaunfEnv
-  { saunfDoc :: Pandoc, -- ^ The work document. For now Saunf supports just a single org file
-    saunfConf :: SaunfConf -- ^ Saunf Configuration
-  } deriving (Show)
+  { -- | The work document. For now Saunf supports just a single org file
+    saunfDoc :: Pandoc,
+    -- | Saunf Configuration
+    saunfConf :: SaunfConf
+  }
+  deriving (Show)
 
-newtype Issue = Issue Section deriving (Show, Eq)
+data Issue = Issue
+  { issueId :: Maybe Text,
+    issueTitle :: Block,
+    issueBody :: [Block]
+  }
+  deriving (Show, Eq)

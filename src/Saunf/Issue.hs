@@ -16,7 +16,7 @@ issues = do
   containers <- filterSections (hasCategory "issues")
   let containerSections = concat $ flip runReader env . issuesFromContainer <$> containers
   sections <- filterSections (hasCategory "issue")
-  return $ Issue <$> sections ++ containerSections
+  return $ (\(Section title body) -> Issue Nothing title body) <$> sections ++ containerSections
   where
     issuesFromContainer :: Section -> Reader SaunfEnv [Section]
     issuesFromContainer = \case

@@ -4,10 +4,10 @@
 module ReadmeSpec where
 
 import Control.Monad.Reader
+import Saunf
 import Saunf.Readme
 import Saunf.Shared
 import Saunf.Types
-import Saunf
 import Test.Hspec
 import Text.Pandoc as P hiding (Reader)
 
@@ -83,25 +83,26 @@ spec = do
 
     it "returns template text from first code block found in readme section" $ do
       orgFile <-
-        P.handleError =<< P.runIO
-          ( readOrg
-              def
-              "#+title: Title *from* Meta\n\n\
-              \This is the description\n\n\
-              \* Any random text\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: saunf-conf\n\
-              \:END:\n\
-              \** Readme\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: readme\n\
-              \:END:\n\
-              \#+begin_src markdown\n\
-              \# $$title$$\n\
-              \$$description$$\n\
-              \## $$#features$$\n\
-              \#+end_src\n"
-          )
+        P.handleError
+          =<< P.runIO
+            ( readOrg
+                def
+                "#+title: Title *from* Meta\n\n\
+                \This is the description\n\n\
+                \* Any random text\n\
+                \:PROPERTIES:\n\
+                \:CUSTOM_ID: saunf-conf\n\
+                \:END:\n\
+                \** Readme\n\
+                \:PROPERTIES:\n\
+                \:CUSTOM_ID: readme\n\
+                \:END:\n\
+                \#+begin_src markdown\n\
+                \# $$title$$\n\
+                \$$description$$\n\
+                \## $$#features$$\n\
+                \#+end_src\n"
+            )
       let configSection = runReader (filterSections (isHeaderWithId "saunf-conf")) (SaunfEnv orgFile mempty)
       let template = getReadmeTemplate (head configSection)
 

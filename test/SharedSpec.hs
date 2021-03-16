@@ -118,7 +118,7 @@ spec = do
       orgFile' <-
         P.runIO
           (readOrg def "** Features\nAwesome features.")
-      (Pandoc _ (h:bs)) <- P.handleError orgFile'
+      (Pandoc _ (h : bs)) <- P.handleError orgFile'
       let section = Section h bs
       let Section header1 _ = setSectionHeaderLevel 3 section
       let Section header2 _ = setSectionHeaderLevel 1 section
@@ -133,9 +133,8 @@ spec = do
       case header3 of
         Header lvl _ _ -> lvl `shouldBe` 7
         x -> x `shouldBe` Null -- just to shut up the non-exhaustive pattern warning
-
     it "shifts every sub-Header's level properly" $ do
-      (Pandoc _ (h:bs)) <-
+      (Pandoc _ (h : bs)) <-
         P.handleError
           =<< P.runIO
             ( readMarkdown

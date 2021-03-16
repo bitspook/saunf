@@ -3,11 +3,11 @@
 
 module SaunfSpec where
 
+import Control.Monad.Reader
 import Saunf
 import Saunf.Types
 import Test.Hspec
 import Text.Pandoc as P hiding (Reader)
-import Control.Monad.Reader
 
 inlines :: Block -> [Inline]
 inlines = \case
