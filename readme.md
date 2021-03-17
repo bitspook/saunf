@@ -73,29 +73,45 @@ At its bare minimum, Saunf should
 
 ## Usage
 
-### CLI
-
-Saunf CLI usage can be obtained using running `saunf --help`
-
-### Saunf Doc
-
 Saunf is in its infancy, so things are likely to change wildly. For now,
 this how you use saunf:
 
 1.  Create `saunf/saunf.org` in root of your project. This file is
     referred to as `saunf-doc`
-
 2.  Describe your project using org-mode markup in saunf-doc
 
-3.  Create a section with `CUSTOM_ID = saunf-conf` property. This is
-    where all the supported saunf conf lives. Title of this section
-    doesn't matter. Saunf uses `CUSTOM_ID` property to identify sections
+### CLI
 
-4.  Create a section within `saunf-conf` section with
-    `CUSTOM_ID = readme`.
+Saunf CLI usage can be obtained using running `saunf --help`
 
-5.  Create a `begin_src` block within `readme` section. This is your
-    readme template. This is a standard [pandoc
+### Saunf Conf(iguration)
+
+Configuration of saunf is expected in [dhall
+format](https://dhall-lang.org/#). It is okay if you are not familiar
+with dhall. Saunf don't have a lot of configuration, so you won't be
+needing a lot of it.
+
+To configure saunf, create `saunf.dhall` file in root of your project.
+Saunf takes following configuration:
+
+| Name           | Type   | Is Required? | Remarks                                                    |
+|----------------|--------|--------------|------------------------------------------------------------|
+| readmeTemplate | Text   | No           | Details below                                              |
+| github         | Object | No           | Optional github configuration. Used for project management |
+| github.user    | Text   | Yes          |                                                            |
+| github.repo    | Text   | Yes          |                                                            |
+| github.token   | Text   | Yes          | [Github OAuth token](https://github.com/settings/tokens)   |
+
+Note in example below that optional fields in Dhall need to be prefixed
+with `Some`, to explicitly express that a value is optional.
+
+For example saunf configuration, you check
+[saunf.dhall](./saunf.dhall) in this project
+itself.
+
+1.  `readmeTemplate`
+
+    This is a standard [pandoc
     template](https://hackage.haskell.org/package/pandoc/docs/Text-Pandoc-Templates.html)
     with small saunf-specific syntax.
 

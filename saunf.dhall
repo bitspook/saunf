@@ -1,25 +1,18 @@
-{ github =
-      Some
-        { user = "channikhabra"
-        , repo = "saunf"
-        , token = env:GITHUB_TOKEN as Text
-        }
-    ? None
-, readmeTemplate =
-      Some
-        ''
-        # $title$
+{ github = Some
+  { user = "channikhabra", repo = "saunf", token = env:GITHUB_TOKEN as Text }
+, readmeTemplate = Some
+    ''
+    # $title$
 
-        $description$
+    $description$
 
-        ## Features
+    ## Features
 
-        ### $#doc-management-module$
-        ### $#issue-management-module$
+    ### $#doc-management-module$
+    ### $#issue-management-module$
 
-        ## $#mvp$
+    ## $#mvp$
 
-        ## $#usage$
-        ''
-    ? None
+    ## $#usage$
+    ''
 }

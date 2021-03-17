@@ -1,18 +1,25 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Saunf.Types where
+module Saunf.Types
+  ( SaunfConf(..),
+    emptyConf,
+    SaunfEnv(..),
+    Issue(..),
+    Section(..)
+  )
+where
 
 import Data.Text (Text)
-import Text.Pandoc (Block, Pandoc)
 import Dhall (FromDhall, Generic)
+import Text.Pandoc (Block, Pandoc)
 
 data SaunfConfError = ConfNotFound | ConflictingConf deriving (Show, Eq)
 
 data GithubConf = GithubConf
-  { githubUser :: Text,
-    githubRepo :: Text,
-    githubOauthToken :: Text
+  { user :: Text,
+    repo :: Text,
+    token :: Text
   }
   deriving (Generic, Show)
 

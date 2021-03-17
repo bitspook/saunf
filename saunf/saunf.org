@@ -36,46 +36,63 @@ over a gazillion tools with no convergence point.
 :CUSTOM_ID: usage
 :END:
 
-*** CLI
-
-Saunf CLI usage can be obtained using running =saunf --help=
-
-*** Saunf Doc
-
 Saunf is in its infancy, so things are likely to change wildly. For now, this
 how you use saunf:
 
 1. Create =saunf/saunf.org= in root of your project. This file is referred to as
    =saunf-doc=
 2. Describe your project using org-mode markup in saunf-doc
-3. Create a section with =CUSTOM_ID = saunf-conf= property. This is where all
-   the supported saunf conf lives. Title of this section doesn't matter. Saunf
-   uses =CUSTOM_ID= property to identify sections
-4. Create a section within =saunf-conf= section with =CUSTOM_ID = readme=.
-5. Create a =begin_src= block within =readme= section. This is your readme
-   template. This is a standard [[https://hackage.haskell.org/package/pandoc/docs/Text-Pandoc-Templates.html][pandoc template]] with small saunf-specific
-   syntax.
 
-   Within the readme template, you have access to =title= and =description=
-   variables, which you can use by wrapping them in =$$=-s e.g =$$title$$=
+*** CLI
 
-   1. =title= is the title set with =#+title:= attribute in saunf-doc
-   2. =description= is the text on top of your saunf-doc before any section starts
+Saunf CLI usage can be obtained using running =saunf --help=
 
-   Following saunf-specific syntax is available:
+*** Saunf Conf(iguration)
 
-   1. =Section Injection=: Saunf allow you to inject entire sections from your
-      saunf-doc inside the readme. Level of the section in saunf-doc is
-      irrelevant; you can mention the level of injected section like this:
+Configuration of saunf is expected in [[https://dhall-lang.org/#][dhall format]]. It is okay if you are not
+familiar with dhall. Saunf don't have a lot of configuration, so you won't be
+needing a lot of it.
 
-      #+begin_src markdown
-      ### $$#usage$$
-      #+end_src
+To configure saunf, create =saunf.dhall= file in root of your project.
+Saunf takes following configuration:
 
-      In this example, =usage= is the =CUSTOM_ID= of the section getting
-      injected, and =3= is the level at which it will be injected. i.e =H3= will
-      be used for the heading of =usage= section, and all its sub-headings will
-      be set as =3 + <subheading-level>=
+| Name           | Type   | Is Required? | Remarks                                                    |
+|----------------+--------+--------------+------------------------------------------------------------|
+| readmeTemplate | Text   | No           | Details below                                              |
+| github         | Object | No           | Optional github configuration. Used for project management |
+| github.user    | Text   | Yes          |                                                            |
+| github.repo    | Text   | Yes          |                                                            |
+| github.token   | Text   | Yes          | [[https://github.com/settings/tokens][Github OAuth token]]                                         |
+
+Note in example below that optional fields in Dhall need to be prefixed with
+=Some=, to explicitly express that a value is optional.
+
+For example saunf configuration, you check [[./saunf.dhall][saunf.dhall]] in this project itself.
+
+**** =readmeTemplate=
+
+This is a standard [[https://hackage.haskell.org/package/pandoc/docs/Text-Pandoc-Templates.html][pandoc template]] with small saunf-specific syntax.
+
+Within the readme template, you have access to =title= and =description=
+variables, which you can use by wrapping them in =$$=-s e.g =$$title$$=
+
+1. =title= is the title set with =#+title:= attribute in saunf-doc
+2. =description= is the text on top of your saunf-doc before any section starts
+
+Following saunf-specific syntax is available:
+
+1. =Section Injection=: Saunf allow you to inject entire sections from your
+   saunf-doc inside the readme. Level of the section in saunf-doc is
+   irrelevant; you can mention the level of injected section like this:
+
+   #+begin_src markdown
+   ### $$#usage$$
+   #+end_src
+
+   In this example, =usage= is the =CUSTOM_ID= of the section getting
+   injected, and =3= is the level at which it will be injected. i.e =H3= will
+   be used for the heading of =usage= section, and all its sub-headings will
+   be set as =3 + <subheading-level>=
 
 * Modules
 
