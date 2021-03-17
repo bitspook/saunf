@@ -46,16 +46,7 @@ spec = do
 
   describe "soberReadmeTemplate" $ do
     it "removes the section if it is not found in pmp-doc" $ do
-      orgFile' <-
-        P.runIO
-          ( readOrg
-              def
-              "* Any random text\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: saunf-conf\n\
-              \:END:\n"
-          )
-      orgFile <- P.handleError orgFile'
+      orgFile <- P.handleError =<< P.runIO (readOrg def "")
       let conf =
             SaunfConf
               ( Just
@@ -90,20 +81,7 @@ spec = do
               \:PROPERTIES:\n\
               \:CUSTOM_ID: features\n\
               \:END:\n\
-              \Awesome features.\n\
-              \* Any random text\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: saunf-conf\n\
-              \:END:\n\
-              \** Readme\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: readme\n\
-              \:END:\n\
-              \#+begin_src markdown\n\
-              \# $$title$$\n\
-              \$$description$$\n\
-              \## $#features$ \n\
-              \#+end_src\n"
+              \Awesome features.\n"
           )
       orgFile <- P.handleError orgFile'
       let conf =
@@ -143,20 +121,7 @@ spec = do
               \:CUSTOM_ID: features\n\
               \:END:\n\
               \Awesome features.\n\
-              \** Level two\n\
-              \* Any random text\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: saunf-conf\n\
-              \:END:\n\
-              \** Readme\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: readme\n\
-              \:END:\n\
-              \#+begin_src markdown\n\
-              \# $$title$$\n\
-              \$$description$$\n\
-              \## $#features$ \n\
-              \#+end_src\n"
+              \** Level two\n"
           )
       orgFile <- P.handleError orgFile'
       let conf =

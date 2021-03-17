@@ -15,36 +15,13 @@ spec :: Spec
 spec = do
   describe "issues" $ do
     it "returns empty list if no issues are present" $ do
-      orgFile <-
-        P.handleError
-          =<< P.runIO
-            ( readOrg
-                def
-                "* Any random text\n\
-                \:PROPERTIES:\n\
-                \:CUSTOM_ID: saunf-conf\n\
-                \:END:\n"
-            )
+      orgFile <- P.handleError =<< P.runIO (readOrg def "")
       let result = runReader issues (SaunfEnv orgFile emptyConf)
 
       result `shouldBe` []
 
     it "returns all sections which have property CATEGORY=issue" $ do
-      orgFile <-
-        P.handleError
-          =<< P.runIO
-            ( readOrg
-                def
-                "* Conf\n\
-                \:PROPERTIES:\n\
-                \:CUSTOM_ID: saunf-conf\n\
-                \:CATEGORY: issue\n\
-                \:END:\n\
-                \* Issue 1\n\
-                \:PROPERTIES:\n\
-                \:CATEGORY: issue\n\
-                \:END:\n"
-            )
+      orgFile <- P.handleError =<< P.runIO (readOrg def "")
       let env = SaunfEnv orgFile emptyConf
       let result = runReader issues env
       let expected =
@@ -59,11 +36,7 @@ spec = do
           =<< P.runIO
             ( readOrg
                 def
-                "* Conf\n\
-                \:PROPERTIES:\n\
-                \:CUSTOM_ID: saunf-conf\n\
-                \:END:\n\
-                \* Issues\n\
+                "* Issues\n\
                 \:PROPERTIES:\n\
                 \:CATEGORY: issues\n\
                 \:END:\n\
@@ -86,11 +59,7 @@ spec = do
           =<< P.runIO
             ( readOrg
                 def
-                "* Conf\n\
-                \:PROPERTIES:\n\
-                \:CUSTOM_ID: saunf-conf\n\
-                \:END:\n\
-                \* Issues\n\
+                "* Issues\n\
                 \:PROPERTIES:\n\
                 \:CATEGORY: issues\n\
                 \:END:\n\
