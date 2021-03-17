@@ -4,7 +4,6 @@
 module ReadmeSpec where
 
 import Control.Monad.Reader
-import Saunf
 import Saunf.Readme
 import Saunf.Shared
 import Saunf.Types
@@ -37,82 +36,6 @@ spec = do
 
       description `shouldBe` Just expectedDescription
 
-  describe "getReadmeTemplate" $ do
-    it "returns Nothing if section with CUSTOM_ID='readme' section is not present in Configuration" $ do
-      orgFile' <-
-        P.runIO
-          ( readOrg
-              def
-              "#+title: Title *from* Meta\n\n\
-              \This is the description\n\n\
-              \* Any random text\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: saunf-conf\n\
-              \:END:\n\
-              \** Readme\n\n\
-              \No CUSTOM_ID though"
-          )
-      orgFile <- P.handleError orgFile'
-      let configSection = runReader (filterSections (isHeaderWithId "saunf-conf")) (SaunfEnv orgFile mempty)
-      let template = getReadmeTemplate (head configSection)
-
-      template `shouldBe` Nothing
-
-    it "returns Nothing if a code block is not present in readme section" $ do
-      orgFile' <-
-        P.runIO
-          ( readOrg
-              def
-              "#+title: Title *from* Meta\n\n\
-              \This is the description\n\n\
-              \* Any random text\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: saunf-conf\n\
-              \:END:\n\
-              \** Readme\n\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: readme\n\
-              \:END:\n\
-              \No code block for template"
-          )
-      orgFile <- P.handleError orgFile'
-      let configSection = runReader (filterSections (isHeaderWithId "saunf-conf")) (SaunfEnv orgFile mempty)
-      let template = getReadmeTemplate (head configSection)
-
-      template `shouldBe` Nothing
-
-    it "returns template text from first code block found in readme section" $ do
-      orgFile <-
-        P.handleError
-          =<< P.runIO
-            ( readOrg
-                def
-                "#+title: Title *from* Meta\n\n\
-                \This is the description\n\n\
-                \* Any random text\n\
-                \:PROPERTIES:\n\
-                \:CUSTOM_ID: saunf-conf\n\
-                \:END:\n\
-                \** Readme\n\
-                \:PROPERTIES:\n\
-                \:CUSTOM_ID: readme\n\
-                \:END:\n\
-                \#+begin_src markdown\n\
-                \# $$title$$\n\
-                \$$description$$\n\
-                \## $$#features$$\n\
-                \#+end_src\n"
-            )
-      let configSection = runReader (filterSections (isHeaderWithId "saunf-conf")) (SaunfEnv orgFile mempty)
-      let template = getReadmeTemplate (head configSection)
-
-      let expectedDoc =
-            "# $$title$$\n\
-            \$$description$$\n\
-            \## $$#features$$\n"
-
-      template `shouldBe` Just expectedDoc
-
   describe "parseInjectedSectionName" $ do
     it "gives Nothing if string is not a section-injection variable" $ do
       parseInjectedSectionName "$title$" `shouldBe` Nothing
@@ -127,23 +50,20 @@ spec = do
         P.runIO
           ( readOrg
               def
-              "\
-              \* Any random text\n\
+              "* Any random text\n\
               \:PROPERTIES:\n\
               \:CUSTOM_ID: saunf-conf\n\
-              \:END:\n\
-              \** Readme\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: readme\n\
-              \:END:\n\
-              \#+begin_src markdown\n\
-              \# $$title$$\n\
-              \$$description$$\n\
-              \## $#features$ \n\
-              \#+end_src\n"
+              \:END:\n"
           )
       orgFile <- P.handleError orgFile'
-      let conf = either mempty id $ runReader getConfig (SaunfEnv orgFile mempty)
+      let conf =
+            SaunfConf
+              ( Just
+                  "# $$title$$\n\
+                  \$$description$$\n\
+                  \## $#features$ \n"
+              )
+              Nothing
       soberTemplate' <- P.runIO $ runReaderT soberReadmeTemplate (SaunfEnv orgFile conf)
       soberTemplate <- P.handleError soberTemplate'
 
@@ -186,7 +106,14 @@ spec = do
               \#+end_src\n"
           )
       orgFile <- P.handleError orgFile'
-      let conf = either mempty id $ runReader getConfig (SaunfEnv orgFile mempty)
+      let conf =
+            SaunfConf
+              ( Just
+                  "# $$title$$\n\
+                  \$$description$$\n\
+                  \## $#features$ \n"
+              )
+              Nothing
       soberTemplate' <- P.runIO $ runReaderT soberReadmeTemplate (SaunfEnv orgFile conf)
       soberTemplate <- P.handleError soberTemplate'
 
@@ -232,7 +159,14 @@ spec = do
               \#+end_src\n"
           )
       orgFile <- P.handleError orgFile'
-      let conf = either mempty id $ runReader getConfig (SaunfEnv orgFile mempty)
+      let conf =
+            SaunfConf
+              ( Just
+                  "# $$title$$\n\
+                  \$$description$$\n\
+                  \## $#features$ \n"
+              )
+              Nothing
       soberTemplate' <- P.runIO $ runReaderT soberReadmeTemplate (SaunfEnv orgFile conf)
       soberTemplate <- P.handleError soberTemplate'
 

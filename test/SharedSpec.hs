@@ -16,7 +16,7 @@ spec = do
     it "returns Nothing if section with given matcher is not found" $ do
       orgFile' <- P.runIO (readOrg def "#+title: Title *from* Meta\n\nThis is the description\n\n* First Section ")
       doc <- P.handleError orgFile'
-      let sections = runReader (filterSections (isHeaderWithId "my-section")) (SaunfEnv doc mempty)
+      let sections = runReader (filterSections (isHeaderWithId "my-section")) (SaunfEnv doc emptyConf)
 
       sections `shouldBe` []
 
@@ -29,7 +29,7 @@ spec = do
           \:END:\n\
           \First section text\n\
           \* Second Section"
-      let sections = runReader (filterSections (isHeaderWithId "my-section")) (SaunfEnv doc mempty)
+      let sections = runReader (filterSections (isHeaderWithId "my-section")) (SaunfEnv doc emptyConf)
 
       (Pandoc _ expectedSection) <-
         readOrg'
@@ -55,7 +55,7 @@ spec = do
           \:PROPERTIES:\n\
           \:CUSTOM_ID: my-section\n\
           \:END:\n"
-      let section = runReader (filterSections (isHeaderWithId "my-section")) (SaunfEnv doc mempty)
+      let section = runReader (filterSections (isHeaderWithId "my-section")) (SaunfEnv doc emptyConf)
 
       (Pandoc _ expectedSection1) <-
         P.handleError
@@ -103,10 +103,10 @@ spec = do
             \:END:\n\
             \* Additional Section\n"
 
-        let sections1 = runReader (sectionsWithProperties [("key1", "val1")]) (SaunfEnv doc mempty)
-        let sections1n2 = runReader (sectionsWithProperties [("key1", "val1"), ("key2", "val2")]) (SaunfEnv doc mempty)
-        let sections2 = runReader (sectionsWithProperties [("key2", "val2")]) (SaunfEnv doc mempty)
-        let nonSections = runReader (sectionsWithProperties [("key3", "val3")]) (SaunfEnv doc mempty)
+        let sections1 = runReader (sectionsWithProperties [("key1", "val1")]) (SaunfEnv doc emptyConf)
+        let sections1n2 = runReader (sectionsWithProperties [("key1", "val1"), ("key2", "val2")]) (SaunfEnv doc emptyConf)
+        let sections2 = runReader (sectionsWithProperties [("key2", "val2")]) (SaunfEnv doc emptyConf)
+        let nonSections = runReader (sectionsWithProperties [("key3", "val3")]) (SaunfEnv doc emptyConf)
 
         nonSections `shouldBe` []
         sections1 `shouldBe` [Section (Header 1 ("", [], [("key1", "val1")]) [Str "Section", Space, Str "1"]) [], Section (Header 1 ("", [], [("key1", "val1"), ("key2", "val2")]) [Str "Section", Space, Str "1+2"]) []]

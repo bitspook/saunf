@@ -4,7 +4,6 @@
 
 module Saunf.Readme
   ( findDescription,
-    getReadmeTemplate,
     soberReadmeTemplate,
     parseInjectedSectionName,
     pushReadmeFile,
@@ -29,20 +28,6 @@ findDescription :: Pandoc -> Maybe [Block]
 findDescription (Pandoc _ bs) = case takeWhile (not . isHeaderBlock) bs of
   [] -> Nothing
   xs -> Just xs
-
--- | Get the readme template string from given config-$Section$
-getReadmeTemplate :: Section -> Maybe Text
-getReadmeTemplate (Section _ bs) = case readmeSection of
-  [Section _ xs] -> firstCodeBlock xs
-  _ -> Nothing
-  where
-    readmeSection = runReader (filterSections (isHeaderWithId "readme")) (SaunfEnv (Pandoc mempty bs) mempty)
-    isCodeBlock x = case x of
-      (CodeBlock _ _) -> True
-      _ -> False
-    firstCodeBlock xs = case find isCodeBlock xs of
-      Just (CodeBlock _ t) -> Just t
-      _ -> Nothing
 
 -- | Parse the name of the section which should be injected out of special
 -- syntax "$#section-name$".

@@ -25,7 +25,7 @@ spec = do
                 \:CUSTOM_ID: saunf-conf\n\
                 \:END:\n"
             )
-      let result = runReader issues (SaunfEnv orgFile mempty)
+      let result = runReader issues (SaunfEnv orgFile emptyConf)
 
       result `shouldBe` []
 
@@ -45,7 +45,7 @@ spec = do
                 \:CATEGORY: issue\n\
                 \:END:\n"
             )
-      let env = SaunfEnv orgFile mempty
+      let env = SaunfEnv orgFile emptyConf
       let result = runReader issues env
       let expected =
             (\(Section title body) -> Issue Nothing title body)
@@ -70,7 +70,7 @@ spec = do
                 \** Issue 1\n\
                 \** Issue 2\n"
             )
-      let env = SaunfEnv orgFile mempty
+      let env = SaunfEnv orgFile emptyConf
       let result = runReader issues env
 
       let expected =
@@ -100,7 +100,7 @@ spec = do
                 \:END:\n\
                 \** Issue 2\n"
             )
-      let env = SaunfEnv orgFile mempty
+      let env = SaunfEnv orgFile emptyConf
       let result = runReader issues env
 
       let expected =

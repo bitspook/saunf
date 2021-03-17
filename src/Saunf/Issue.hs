@@ -19,7 +19,7 @@ issues = do
   return $ (\(Section title body) -> Issue (issueId title) title body) <$> sections ++ containerSections
   where
     issueId :: P.Block -> Maybe Text
-    issueId ( P.Header _ (_, _, props) _) = snd <$> find (\(name, _) -> name == "issue_id") props
+    issueId (P.Header _ (_, _, props) _) = snd <$> find (\(name, _) -> name == "issue_id") props
     issueId _ = Nothing
 
     issuesFromContainer :: Section -> Reader SaunfEnv [Section]
@@ -28,3 +28,12 @@ issues = do
         local (\env -> env {saunfDoc = P.Pandoc mempty body}) $
           filterSections (isHeaderWithLevel (lvl + 1))
       _ -> return []
+
+push :: Reader SaunfEnv ()
+push = do
+  allIssues <- issues
+  let newIssues = filter (isNothing . issueId) allIssues
+  -- for issue in newIssues:
+  --    createGithubIssue issue
+
+  return ()

@@ -36,7 +36,7 @@ filterSections headerMatcher = do
       Section h (takeWhile (sectionContent level) xs) :
       runReader
         (filterSections headerMatcher)
-        (SaunfEnv (Pandoc mempty (dropWhile (sectionContent level) xs)) mempty)
+        (SaunfEnv (Pandoc mempty (dropWhile (sectionContent level) xs)) emptyConf)
     _ -> []
   where
     isNotMatch x = case x of

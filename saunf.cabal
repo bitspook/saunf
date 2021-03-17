@@ -36,6 +36,8 @@ common core
     , doctemplates
     , aeson
     , relude
+    , github
+    , dhall
 
   ghc-options:        -Wall
                       -Wno-name-shadowing
@@ -111,7 +113,6 @@ test-suite test-suite
    , relude
   other-modules:
     ReadmeSpec
-    SaunfSpec
     SharedSpec
     IssueSpec
     Shared

@@ -44,6 +44,8 @@
         cabal-install
         hlint
         pkgs.nixpkgs-fmt
+        pkgs.ormolu
+        pkgs.dhall
       ];
       withHoogle = false;
     };
