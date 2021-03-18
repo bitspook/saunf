@@ -5,29 +5,48 @@ module Main where
 
 import Control.Monad.Reader
 import qualified Data.Text.IO as T
+import qualified Dhall (auto, input)
 import Options.Applicative
-import Saunf
+import Saunf.Readme
+import Saunf.Conf
 import Saunf.Types
 import Text.Pandoc as P
-import qualified Dhall (input, auto)
+import qualified Saunf.Issue as SaunfIssues
 
-newtype CliOptions = Readme ReadmeOptions deriving (Show)
+data CliOptions
+  = Readme ReadmeOptions
+  | GithubIssues GithubIssuesOptions
+  deriving (Show)
 
 data ReadmeOptions
-  = Push -- Push changes to readme
-  | Pull -- Pull changes back from readme
+  = PushReadme -- Push changes to readme
+  | PullReadme -- Pull changes back from readme
+  deriving (Show)
+
+data GithubIssuesOptions
+  = PushGHIssues -- Push new issues to Github
+  | PullGHIssues -- Pull new issues from Github
   deriving (Show)
 
 readmeOptions :: Parser ReadmeOptions
 readmeOptions =
   subparser
-    ( command "push" (info (pure Push) (progDesc "Push changes to readme.md"))
-        <> command "pull" (info (pure Pull) (progDesc "Pull changes made to readme.md back"))
+    ( command "push" (info (pure PushReadme) (progDesc "Push changes to readme.md"))
+        <> command "pull" (info (pure PullReadme) (progDesc "Pull changes made to readme.md back"))
+    )
+
+githubIssuesOptions :: Parser GithubIssuesOptions
+githubIssuesOptions =
+  subparser
+    ( command "push" (info (pure PushGHIssues) (progDesc "Push new issues to Github issues"))
+        <> command "pull" (info (pure PullGHIssues) (progDesc "Pull new Github issues"))
     )
 
 cliOptions :: Parser CliOptions
 cliOptions =
-  subparser $ command "readme" (info (Readme <$> readmeOptions <**> helper) (progDesc "Manage the readme file"))
+  subparser $
+    command "readme" (info (Readme <$> readmeOptions <**> helper) (progDesc "Manage the readme file"))
+      <> command "gh-issues" (info (GithubIssues <$> githubIssuesOptions <**> helper) (progDesc "Manage Github issues"))
 
 cliParser :: ParserInfo CliOptions
 cliParser = info (cliOptions <**> helper) (fullDesc <> header "Tasty project management" <> progDesc "Manage software projects with plain-text")
@@ -35,12 +54,13 @@ cliParser = info (cliOptions <**> helper) (fullDesc <> header "Tasty project man
 main :: IO ()
 main = do
   let readmeDest = "./readme.md"
-  config :: SaunfConf <- Dhall.input Dhall.auto "./saunf.dhall"
+  conf :: SaunfConf <- Dhall.input Dhall.auto "./saunf.dhall"
   pmpText <- T.readFile "./saunf/saunf.org"
   saunfDoc <- P.handleError =<< P.runIO (readOrg def pmpText)
   val <- execParser cliParser
 
-  let env = SaunfEnv saunfDoc config
+  let env = SaunfEnv saunfDoc conf
   case val of
-    Readme Push -> runReaderT (pushReadmeFile readmeDest) env
+    Readme PushReadme -> runReaderT (pushReadmeFile readmeDest) env
+    GithubIssues PushGHIssues -> runReaderT SaunfIssues.push env
     _ -> putStrLn "Not implemented yet :-("

@@ -68,9 +68,10 @@ library
   import:           core
   exposed-modules:
     Saunf,
+    Saunf.Conf,
+    Saunf.Types,
     Saunf.Readme,
     Saunf.Shared,
-    Saunf.Types,
     Saunf.Issue
   other-modules:
   hs-source-dirs:   src

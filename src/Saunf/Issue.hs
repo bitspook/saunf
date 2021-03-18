@@ -5,7 +5,12 @@
 module Saunf.Issue where
 
 import Control.Monad.Reader
+import qualified GitHub.Auth as GH
+import qualified GitHub.Data.Issues as GH
+import qualified GitHub.Endpoints.Issues as GH
+import qualified GitHub.Request as GH
 import Relude
+import Saunf.Conf
 import Saunf.Shared
 import Saunf.Types
 import qualified Text.Pandoc as P
@@ -29,11 +34,30 @@ issues = do
           filterSections (isHeaderWithLevel (lvl + 1))
       _ -> return []
 
-push :: Reader SaunfEnv ()
-push = do
-  allIssues <- issues
-  let newIssues = filter (isNothing . issueId) allIssues
-  -- for issue in newIssues:
-  --    createGithubIssue issue
+createGithubIssue :: Issue -> ReaderT SaunfEnv IO (Either GH.Error GH.Issue)
+createGithubIssue (Issue _ title body) = do
+  ghConf' <- asks $ github . saunfConf
+  case ghConf' of
+    Nothing -> error "Could not find Github configuration"
+    Just (GithubConf user repo token) -> do
+      let auth = GH.OAuth (encodeUtf8 token)
+      titleText <- writeMd [title]
+      bodyText <- writeMd body
+      let newGhIssue = (GH.newIssue titleText) {GH.newIssueBody = Just bodyText}
+      let issueReq = GH.createIssueR user repo newGhIssue
 
+      liftIO $ GH.github auth issueReq
+
+push :: ReaderT SaunfEnv IO ()
+push = do
+  env <- ask
+  let allIssues = runReader issues env
+  let newIssues = filter (isNothing . issueId) allIssues
+  createdIssues <- mapM createGithubIssue newIssues
+  let _ = handleCreatedIssue <$> createdIssues
   return ()
+  where
+    handleCreatedIssue :: Either GH.Error GH.Issue -> IO ()
+    handleCreatedIssue = \case
+      Left err -> putStrLn $ "Failed to create Github issue: " ++ show err
+      Right issue -> putStrLn $ "Successfully created Github issue: " ++ show issue

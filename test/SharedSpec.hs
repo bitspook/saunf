@@ -5,6 +5,7 @@ module SharedSpec where
 
 import Control.Monad.Reader
 import Saunf.Shared
+import Saunf.Conf
 import Saunf.Types
 import Shared
 import Test.Hspec

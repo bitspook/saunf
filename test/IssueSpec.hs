@@ -6,6 +6,7 @@ module IssueSpec where
 
 import Relude
 import Saunf.Issue
+import Saunf.Conf
 import Saunf.Shared
 import Saunf.Types
 import Test.Hspec

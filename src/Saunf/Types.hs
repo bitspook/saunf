@@ -1,40 +1,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Saunf.Types
-  ( SaunfConf(..),
-    emptyConf,
-    SaunfEnv(..),
-    Issue(..),
-    Section(..)
-  )
-where
+module Saunf.Types where
 
 import Data.Text (Text)
-import Dhall (FromDhall, Generic)
+import Saunf.Conf
 import Text.Pandoc (Block, Pandoc)
-
-data SaunfConfError = ConfNotFound | ConflictingConf deriving (Show, Eq)
-
-data GithubConf = GithubConf
-  { user :: Text,
-    repo :: Text,
-    token :: Text
-  }
-  deriving (Generic, Show)
-
-instance FromDhall GithubConf
-
-data SaunfConf = SaunfConf
-  { readmeTemplate :: Maybe Text,
-    github :: Maybe GithubConf
-  }
-  deriving (Show, Generic)
-
-instance FromDhall SaunfConf
-
-emptyConf :: SaunfConf
-emptyConf = SaunfConf Nothing Nothing
 
 -- | Pandoc don't have a concept of sections, but org-mode do. A section is
 -- | essentially everything that follows a header (inclusive), until another

@@ -6,6 +6,7 @@ import Control.Monad.Reader
 import Data.List (intersect)
 import Data.Text (Text)
 import Saunf.Types
+import Saunf.Conf
 import Text.Pandoc hiding (Reader)
 import Text.Pandoc.Shared
 

@@ -5,7 +5,7 @@ module ReadmeSpec where
 
 import Control.Monad.Reader
 import Saunf.Readme
-import Saunf.Shared
+import Saunf.Conf
 import Saunf.Types
 import Test.Hspec
 import Text.Pandoc as P hiding (Reader)

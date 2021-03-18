@@ -17,6 +17,7 @@ import Data.Text (Text, pack)
 import qualified Data.Text.IO as T
 import Saunf.Shared
 import Saunf.Types
+import Saunf.Conf
 import Text.DocLayout (render)
 import Text.Pandoc as P hiding (Reader)
 import Text.Pandoc.Shared
