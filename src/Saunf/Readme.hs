@@ -12,7 +12,6 @@ where
 
 import Control.Monad.Reader
 import Data.Aeson
-import Data.List (find)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text, pack)
 import qualified Data.Text.IO as T
@@ -91,14 +90,13 @@ instance ToJSON ReadmeContext where
 pushReadmeFile :: FilePath -> ReaderT SaunfEnv IO ()
 pushReadmeFile dest = do
   env <- ask
-  pmpDoc@(Pandoc meta _) <- asks saunfDoc
+  sDoc@(Pandoc meta _) <- asks saunfDoc
 
   soberTemplate' <- liftIO $ P.runIO $ runReaderT soberReadmeTemplate env
   soberTemplate <- liftIO $ P.handleError soberTemplate'
 
   let title = lookupMetaString "title" meta
-  description' <- liftIO $ P.runIO $ writeMarkdown def $ Pandoc meta $ fromMaybe mempty (findDescription pmpDoc)
-  description <- liftIO $ P.handleError description'
+  description <- writeMd $ fromMaybe mempty (findDescription sDoc)
 
   let context = ReadmeContext title description
 

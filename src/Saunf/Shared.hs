@@ -67,3 +67,9 @@ setSectionHeaderLevel n (Section h xs) = case h of
         Header lvl a i -> Header (lvl + delta) a i
         _ -> b
   _ -> Section h xs
+
+-- Nasty little helper to quickly render shit to markdown
+writeMd :: [Block] -> ReaderT SaunfEnv IO Text
+writeMd bollocks = do
+  (Pandoc meta _) <- asks saunfDoc
+  liftIO $ handleError =<< runIO (writeMarkdown def $ Pandoc meta bollocks)
