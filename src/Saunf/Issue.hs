@@ -54,8 +54,7 @@ push = do
   let allIssues = runReader issues env
   let newIssues = filter (isNothing . issueId) allIssues
   createdIssues <- mapM createGithubIssue newIssues
-  let _ = handleCreatedIssue <$> createdIssues
-  return ()
+  mapM_ (liftIO . handleCreatedIssue) createdIssues
   where
     handleCreatedIssue :: Either GH.Error GH.Issue -> IO ()
     handleCreatedIssue = \case

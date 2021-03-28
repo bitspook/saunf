@@ -1,5 +1,8 @@
 { github = Some
-  { user = "channikhabra", repo = "saunf", token = env:GITHUB_TOKEN as Text }
+  { user = "channikhabra"
+  , repo = "saunf-test"
+  , token = env:GITHUB_TOKEN as Text
+  }
 , readmeTemplate = Some
     ''
     # $title$

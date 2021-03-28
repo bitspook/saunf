@@ -140,11 +140,11 @@ At its bare minimum, Saunf should
   - [ ] Pull changes from github
 
 * Epics
-:PROPERTIES:
-:CATEGORY: epics
-:END:
 
 ** Readme
+:PROPERTIES:
+:CATEGORY: issues
+:END:
 
 *** DONE User should be able to define a readme template within saunf-doc
 CLOSED: [2021-02-03 Wed 11:48]
@@ -157,6 +157,9 @@ CLOSED: [2021-02-03 Wed 11:51]
 so that github users can see the term definition by hovering over it.
 
 ** Github Issues
+:PROPERTIES:
+:CATEGORY: issues
+:END:
 
 *** TODO User should be able to push new issues to github issues
 *** TODO User should be able to update github issues
