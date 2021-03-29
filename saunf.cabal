@@ -38,6 +38,7 @@ common core
     , relude
     , github
     , dhall
+    , directory
 
   ghc-options:        -Wall
                       -Wno-name-shadowing

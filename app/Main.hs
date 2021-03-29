@@ -7,14 +7,16 @@ import Control.Monad.Reader
 import qualified Data.Text.IO as T
 import qualified Dhall (auto, input)
 import Options.Applicative
-import Saunf.Readme
 import Saunf.Conf
+import qualified Saunf.Issue as SaunfIssues
+import Saunf
+import Saunf.Readme
 import Saunf.Types
 import Text.Pandoc as P
-import qualified Saunf.Issue as SaunfIssues
 
 data CliOptions
-  = Readme ReadmeOptions
+  = Init
+  | Readme ReadmeOptions
   | GithubIssues GithubIssuesOptions
   deriving (Show)
 
@@ -45,7 +47,8 @@ githubIssuesOptions =
 cliOptions :: Parser CliOptions
 cliOptions =
   subparser $
-    command "readme" (info (Readme <$> readmeOptions <**> helper) (progDesc "Manage the readme file"))
+    command "init" (info (pure Init) (progDesc "Initialize a saunf in a project with default conf"))
+      <> command "readme" (info (Readme <$> readmeOptions <**> helper) (progDesc "Manage the readme file"))
       <> command "gh-issues" (info (GithubIssues <$> githubIssuesOptions <**> helper) (progDesc "Manage Github issues"))
 
 cliParser :: ParserInfo CliOptions
@@ -53,14 +56,17 @@ cliParser = info (cliOptions <**> helper) (fullDesc <> header "Tasty project man
 
 main :: IO ()
 main = do
-  let readmeDest = "./readme.md"
-  conf :: SaunfConf <- Dhall.input Dhall.auto "./saunf.dhall"
-  pmpText <- T.readFile "./saunf/saunf.org"
-  saunfDoc <- P.handleError =<< P.runIO (readOrg def pmpText)
   val <- execParser cliParser
-
-  let env = SaunfEnv saunfDoc conf
   case val of
-    Readme PushReadme -> runReaderT (pushReadmeFile readmeDest) env
-    GithubIssues PushGHIssues -> runReaderT SaunfIssues.push env
-    _ -> putStrLn "Not implemented yet :-("
+    Init -> Saunf.init
+    _ -> do
+      let readmeDest = "./readme.md"
+      conf :: SaunfConf <- Dhall.input Dhall.auto "./saunf.dhall"
+      pmpText <- T.readFile "./saunf/saunf.org"
+      saunfDoc <- P.handleError =<< P.runIO (readOrg def pmpText)
+
+      let env = SaunfEnv saunfDoc conf
+      case val of
+        Readme PushReadme -> runReaderT (pushReadmeFile readmeDest) env
+        GithubIssues PushGHIssues -> runReaderT SaunfIssues.push env
+        _ -> putStrLn "Not implemented yet :-("

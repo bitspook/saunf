@@ -105,9 +105,9 @@ Saunf takes following configuration:
 Note in example below that optional fields in Dhall need to be prefixed
 with `Some`, to explicitly express that a value is optional.
 
-For example saunf configuration, you check
-[saunf.dhall](./saunf.dhall) in this project
-itself.
+For example saunf configuration, you check [saunf.dhall](./saunf.dhall)
+in this project itself. You can also create a default saunf conf by
+using `saunf init` command.
 
 1.  `readmeTemplate`
 

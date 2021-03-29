@@ -1,21 +1,23 @@
-{ github = Some
-  { user = "channikhabra"
-  , repo = "saunf-test"
-  , token = env:GITHUB_TOKEN as Text
-  }
-, readmeTemplate = Some
-    ''
-    # $title$
+let Github = { repo : Text, user : Text, token : Text }
 
-    $description$
+in  { github = Some
+      { user = "channikhabra"
+      , repo = "saunf-test"
+      , token = env:GITHUB_TOKEN as Text
+      }
+    , readmeTemplate = Some
+        ''
+        # $title$
 
-    ## Features
+        $description$
 
-    ### $#doc-management-module$
-    ### $#issue-management-module$
+        ## Features
 
-    ## $#mvp$
+        ### $#doc-management-module$
+        ### $#issue-management-module$
 
-    ## $#usage$
-    ''
-}
+        ## $#mvp$
+
+        ## $#usage$
+        ''
+    }
