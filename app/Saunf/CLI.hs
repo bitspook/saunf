@@ -7,7 +7,6 @@ import Control.Monad.Reader
 import qualified Data.Text.IO as T
 import qualified Dhall (auto, input)
 import qualified Saunf.CLI.Commands as Commands
-import Saunf.Readme
 import Saunf.Types
 import Options.Applicative
 import Text.Pandoc as P
@@ -71,6 +70,6 @@ run = do
       env <- buildSaunfEnv
 
       case val of
-        Readme PushReadme -> runReaderT (unCLI $ pushReadmeFile readmeDest) env
+        Readme PushReadme -> runReaderT (unCLI $ Commands.pushReadmeFile readmeDest) env
         -- GithubIssues PushGHIssues -> runReaderT (unCLI $ SaunfIssues.push) env
         _ -> putStrLn "Not implemented yet 😢"

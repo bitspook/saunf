@@ -7,12 +7,11 @@ module Saunf.Readme
   ( findDescription,
     soberReadmeTemplate,
     parseInjectedSectionName,
-    pushReadmeFile,
+    readme,
   )
 where
 
 import Data.Aeson
-import qualified Data.Text.IO as T
 import Relude hiding ((<|>))
 import Saunf.Conf
 import Saunf.Shared
@@ -58,8 +57,8 @@ explodeMaybe a =
     _ -> return [a]
 
 -- | Evaluate all Saunf syntax in readme template to produce a valid Pandoc
---template. It parses readme template as markdown, operate on it to remove all
---special syntax, and return back a markdown string
+-- template. It parses readme template as markdown, operate on it to remove all
+-- special syntax, and return back a markdown string
 soberReadmeTemplate ::
   ( MonadReader e m,
     HasSaunfDoc e,
@@ -90,28 +89,26 @@ instance ToJSON ReadmeContext where
         "description" .= readmeDescription e
       ]
 
--- Create a readme doc, and push it to readme.md
-pushReadmeFile ::
+-- | Resolve Saunf-special syntax from readme-template given in conf, populates
+-- it with variables, and produce final Readme file's content in markdown format
+readme ::
   ( MonadIO m,
     MonadReader e m,
     HasSaunfDoc e,
-    HasSaunfConf e
+    HasSaunfConf e,
+    PandocMonad m
   ) =>
-  FilePath ->
-  m ()
-pushReadmeFile dest = do
+  m Text
+readme = do
   sDoc@(Pandoc meta _) <- asks getSaunfDoc
-  env <- ask
-  soberTemplate' <- liftIO $ P.runIO $ runReaderT soberReadmeTemplate env
-  soberTemplate <- liftIO $ P.handleError soberTemplate'
+  soberTemplate <- soberReadmeTemplate
 
   let title = lookupMetaString "title" meta
-  description' <- liftIO $ P.runIO $ runReaderT (writeMd $ fromMaybe mempty (findDescription sDoc)) env
-  description <- liftIO $ P.handleError description'
+  description <- writeMd $ fromMaybe mempty (findDescription sDoc)
 
   let context = ReadmeContext title description
 
   tc <- liftIO $ compileTemplate "readme.md" soberTemplate
   case tc of
     Left e -> error (Relude.toText e)
-    Right t -> liftIO $ T.writeFile dest $ render Nothing $ renderTemplate t (toJSON context)
+    Right t -> return $ render Nothing $ renderTemplate t (toJSON context)
