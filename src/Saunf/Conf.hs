@@ -21,7 +21,9 @@ instance FromDhall (Name Repo)
 instance FromDhall GithubConf
 
 data SaunfConf = SaunfConf
-  { readmeTemplate :: Maybe Text,
+  { readmePath :: FilePath,
+    saunfDocPath :: FilePath,
+    readmeTemplate :: Maybe Text,
     github :: Maybe GithubConf
   }
   deriving (Show, Generic)
@@ -29,4 +31,4 @@ data SaunfConf = SaunfConf
 instance FromDhall SaunfConf
 
 emptyConf :: SaunfConf
-emptyConf = SaunfConf Nothing Nothing
+emptyConf = SaunfConf "" "" Nothing Nothing

@@ -12,7 +12,7 @@ module Saunf.Types where
 import Colog
 import Saunf.Conf
 import Relude
-import Text.Pandoc (Block, Pandoc, PandocMonad)
+import Text.Pandoc (Block, Pandoc)
 
 -- | Pandoc don't have a concept of sections, but org-mode do. A section is
 -- | essentially everything that follows a header (inclusive), until another

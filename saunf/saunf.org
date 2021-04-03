@@ -177,7 +177,8 @@ so that github users can see the term definition by hovering over it.
 Tables in saunf-doc gets exported as =[TABLE]= in readme.md. Pandoc itself is
 able to export org tables, but saunf for some reason is behaving like this.
 * Tasks
-** Make saunf-doc configurable                                 :enhancement:
+** DONE Make saunf-doc configurable                            :enhancement:
+CLOSED: [2021-04-03 Sat 17:20]
 saunf-doc is hardheaded to be =/saunf/saunf.org=, it should be configurable from
 conf, with a reasonable default. I think =saunf.org= is a better default
 location than =/saunf/saunf.org=

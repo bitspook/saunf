@@ -7,6 +7,7 @@ module Saunf.CLI.Commands where
 import Relude
 import System.Directory
 import Saunf.Types
+import Saunf.Conf
 import qualified Saunf.Readme as Saunf
 import Text.Pandoc as P
 import qualified Data.Text.IO as T
@@ -18,7 +19,9 @@ init = do
         "\
         \let Github = { repo : Text, user : Text, token : Text }\n\
         \\n\
-        \in  { github = None Github\n\
+        \in  { readmePath = \"./readme.md\"\n\
+        \    , saunfDocPath = \"./saunf/saunf.org\"\n\
+        \    , github = None Github\n\
         \    , readmeTemplate = Some\n\
         \        ''\n\
         \        # $title$\n\
@@ -42,9 +45,9 @@ pushReadmeFile ::
     HasSaunfDoc e,
     HasSaunfConf e
   ) =>
-  FilePath ->
   m ()
-pushReadmeFile dest = do
+pushReadmeFile = do
+  dest <- asks $ readmePath . getSaunfConf
   env <- ask
 
   readme' <- liftIO $ P.runIO $ runReaderT Saunf.readme env
