@@ -4,35 +4,27 @@
 module ReadmeSpec where
 
 import Control.Monad.Reader
-import Saunf.Readme
 import Saunf.Conf
+import Saunf.Readme
 import Saunf.Types
 import Test.Hspec
+import TestAssist
 import Text.Pandoc as P hiding (Reader)
-
-inlines :: Block -> [Inline]
-inlines = \case
-  (Plain xs) -> xs
-  (Para xs) -> xs
-  _ -> []
 
 spec :: Spec
 spec = do
   describe "findDescription" $ do
     it "returns Nothing if there is no text preceding first section" $ do
-      orgFile' <- P.runIO (readOrg def "#+title: Title *from* Meta\n\n* First section heading")
-      orgFile <- P.handleError orgFile'
+      orgFile <- readOrg' "#+title: Title *from* Meta\n\n* First section heading"
       let description = findDescription orgFile
 
       description `shouldBe` Nothing
 
     it "returns all text till first section" $ do
-      orgFile' <- P.runIO (readOrg def "#+title: Title *from* Meta\n\nThis is the description\n\n* First Section ")
-      orgFile <- P.handleError orgFile'
+      orgFile <- readOrg' "#+title: Title *from* Meta\n\nThis is the description\n\n* First Section "
       let description = findDescription orgFile
 
-      expectedDoc' <- P.runIO (readOrg def "This is the description")
-      (Pandoc _ expectedDescription) <- P.handleError expectedDoc'
+      (Pandoc _ expectedDescription) <- readOrg' "This is the description"
 
       description `shouldBe` Just expectedDescription
 
@@ -46,16 +38,18 @@ spec = do
 
   describe "soberReadmeTemplate" $ do
     it "removes the section if it is not found in pmp-doc" $ do
-      orgFile <- P.handleError =<< P.runIO (readOrg def "")
+      orgFile <- readOrg' ""
       let conf =
             SaunfConf
+              ""
+              ""
               ( Just
                   "# $$title$$\n\
                   \$$description$$\n\
                   \## $#features$ \n"
               )
               Nothing
-      soberTemplate' <- P.runIO $ runReaderT soberReadmeTemplate (SaunfEnv orgFile conf)
+      soberTemplate' <- P.runIO $ runReaderT soberReadmeTemplate (env {saunfDoc = orgFile, saunfConf = conf})
       soberTemplate <- P.handleError soberTemplate'
 
       expected' <-
@@ -72,27 +66,25 @@ spec = do
       soberTemplate `shouldBe` expected
 
     it "replaces the section with entire section content if it is found in pmp-doc" $ do
-      orgFile' <-
-        P.runIO
-          ( readOrg
-              def
-              "\
-              \** Features\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: features\n\
-              \:END:\n\
-              \Awesome features.\n"
-          )
-      orgFile <- P.handleError orgFile'
+      orgFile <-
+        readOrg'
+          "\
+          \** Features\n\
+          \:PROPERTIES:\n\
+          \:CUSTOM_ID: features\n\
+          \:END:\n\
+          \Awesome features.\n"
       let conf =
             SaunfConf
+              ""
+              ""
               ( Just
                   "# $$title$$\n\
                   \$$description$$\n\
                   \## $#features$ \n"
               )
               Nothing
-      soberTemplate' <- P.runIO $ runReaderT soberReadmeTemplate (SaunfEnv orgFile conf)
+      soberTemplate' <- P.runIO $ runReaderT soberReadmeTemplate (env {saunfDoc = orgFile, saunfConf = conf})
       soberTemplate <- P.handleError soberTemplate'
 
       expected' <-
@@ -111,28 +103,26 @@ spec = do
       soberTemplate `shouldBe` expected
 
     it "adjust header levels of the injected section as per provided level in readme template" $ do
-      orgFile' <-
-        P.runIO
-          ( readOrg
-              def
-              "\
-              \* Features\n\
-              \:PROPERTIES:\n\
-              \:CUSTOM_ID: features\n\
-              \:END:\n\
-              \Awesome features.\n\
-              \** Level two\n"
-          )
-      orgFile <- P.handleError orgFile'
+      orgFile <-
+        readOrg'
+          "\
+          \* Features\n\
+          \:PROPERTIES:\n\
+          \:CUSTOM_ID: features\n\
+          \:END:\n\
+          \Awesome features.\n\
+          \** Level two\n"
       let conf =
             SaunfConf
+              ""
+              ""
               ( Just
                   "# $$title$$\n\
                   \$$description$$\n\
                   \## $#features$ \n"
               )
               Nothing
-      soberTemplate' <- P.runIO $ runReaderT soberReadmeTemplate (SaunfEnv orgFile conf)
+      soberTemplate' <- P.runIO $ runReaderT soberReadmeTemplate (env {saunfDoc = orgFile, saunfConf = conf})
       soberTemplate <- P.handleError soberTemplate'
 
       expected' <-

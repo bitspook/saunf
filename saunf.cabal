@@ -116,9 +116,10 @@ test-suite test-suite
    , containers
    , text
    , relude
+   , co-log
   other-modules:
     ReadmeSpec
     SharedSpec
     IssueSpec
-    Shared
+    TestAssist
   default-language: Haskell2010

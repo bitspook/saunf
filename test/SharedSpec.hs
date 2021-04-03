@@ -5,19 +5,17 @@ module SharedSpec where
 
 import Control.Monad.Reader
 import Saunf.Shared
-import Saunf.Conf
 import Saunf.Types
-import Shared
 import Test.Hspec
+import TestAssist
 import Text.Pandoc as P hiding (Reader)
 
 spec :: Spec
 spec = do
   describe "filterSections" $ do
     it "returns Nothing if section with given matcher is not found" $ do
-      orgFile' <- P.runIO (readOrg def "#+title: Title *from* Meta\n\nThis is the description\n\n* First Section ")
-      doc <- P.handleError orgFile'
-      let sections = runReader (filterSections (isHeaderWithId "my-section")) (SaunfEnv doc emptyConf)
+      doc <- readOrg' "#+title: Title *from* Meta\n\nThis is the description\n\n* First Section "
+      let sections = runReader (filterSections (isHeaderWithId "my-section")) (env {saunfDoc = doc})
 
       sections `shouldBe` []
 
@@ -30,7 +28,7 @@ spec = do
           \:END:\n\
           \First section text\n\
           \* Second Section"
-      let sections = runReader (filterSections (isHeaderWithId "my-section")) (SaunfEnv doc emptyConf)
+      let sections = runReader (filterSections (isHeaderWithId "my-section")) (env {saunfDoc = doc})
 
       (Pandoc _ expectedSection) <-
         readOrg'
@@ -56,29 +54,21 @@ spec = do
           \:PROPERTIES:\n\
           \:CUSTOM_ID: my-section\n\
           \:END:\n"
-      let section = runReader (filterSections (isHeaderWithId "my-section")) (SaunfEnv doc emptyConf)
+      let section = runReader (filterSections (isHeaderWithId "my-section")) (env {saunfDoc = doc})
 
       (Pandoc _ expectedSection1) <-
-        P.handleError
-          =<< P.runIO
-            ( readOrg
-                def
-                "* Original Section\n\
-                \:PROPERTIES:\n\
-                \:CUSTOM_ID: my-section\n\
-                \:END:\n\
-                \Original section text\n"
-            )
+        readOrg'
+          "* Original Section\n\
+          \:PROPERTIES:\n\
+          \:CUSTOM_ID: my-section\n\
+          \:END:\n\
+          \Original section text\n"
       (Pandoc _ expectedSection2) <-
-        P.handleError
-          =<< P.runIO
-            ( readOrg
-                def
-                "* Duplicate Section\n\
-                \:PROPERTIES:\n\
-                \:CUSTOM_ID: my-section\n\
-                \:END:"
-            )
+        readOrg'
+          "* Duplicate Section\n\
+          \:PROPERTIES:\n\
+          \:CUSTOM_ID: my-section\n\
+          \:END:"
 
       section
         `shouldBe` [ Section (head expectedSection1) (tail expectedSection1),
@@ -104,10 +94,10 @@ spec = do
             \:END:\n\
             \* Additional Section\n"
 
-        let sections1 = runReader (sectionsWithProperties [("key1", "val1")]) (SaunfEnv doc emptyConf)
-        let sections1n2 = runReader (sectionsWithProperties [("key1", "val1"), ("key2", "val2")]) (SaunfEnv doc emptyConf)
-        let sections2 = runReader (sectionsWithProperties [("key2", "val2")]) (SaunfEnv doc emptyConf)
-        let nonSections = runReader (sectionsWithProperties [("key3", "val3")]) (SaunfEnv doc emptyConf)
+        let sections1 = runReader (sectionsWithProperties [("key1", "val1")]) (env {saunfDoc = doc})
+        let sections1n2 = runReader (sectionsWithProperties [("key1", "val1"), ("key2", "val2")]) (env {saunfDoc = doc})
+        let sections2 = runReader (sectionsWithProperties [("key2", "val2")]) (env {saunfDoc = doc})
+        let nonSections = runReader (sectionsWithProperties [("key3", "val3")]) (env {saunfDoc = doc})
 
         nonSections `shouldBe` []
         sections1 `shouldBe` [Section (Header 1 ("", [], [("key1", "val1")]) [Str "Section", Space, Str "1"]) [], Section (Header 1 ("", [], [("key1", "val1"), ("key2", "val2")]) [Str "Section", Space, Str "1+2"]) []]
@@ -116,10 +106,7 @@ spec = do
 
   describe "setSectionHeaderLevel" $ do
     it "sets the section Header's level to given level" $ do
-      orgFile' <-
-        P.runIO
-          (readOrg def "** Features\nAwesome features.")
-      (Pandoc _ (h : bs)) <- P.handleError orgFile'
+      (Pandoc _ (h : bs)) <- readOrg' "** Features\nAwesome features."
       let section = Section h bs
       let Section header1 _ = setSectionHeaderLevel 3 section
       let Section header2 _ = setSectionHeaderLevel 1 section

@@ -1,7 +1,11 @@
 let Github = { repo : Text, user : Text, token : Text }
 
-in  { saunfDocPath = "./saunf/saunf.org"
-    , readmePath = "./readme.md"
+let readmePath = "./readme.md"
+
+let saunfDocPath = "./saunf/saunf.org"
+
+in  { saunfDocPath
+    , readmePath
     , readmeTemplate = Some
         ''
         # $title$
