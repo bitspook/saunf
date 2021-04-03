@@ -168,7 +168,19 @@ so that github users can see the term definition by hovering over it.
 - [ ] Change issue title and description
 *** TODO User should be able to pull new issues from github issues
 *** TODO User should be able to pull changes to existing issues from github issues
+* Bugs                                                                  :bug:
+:PROPERTIES:
+:CATEGORY: issues
+:END:
+** TODO =readme push= don't export tables
 
+Tables in saunf-doc gets exported as =[TABLE]= in readme.md. Pandoc itself is
+able to export org tables, but saunf for some reason is behaving like this.
+* Tasks
+** Make saunf-doc configurable                                 :enhancement:
+saunf-doc is hardheaded to be =/saunf/saunf.org=, it should be configurable from
+conf, with a reasonable default. I think =saunf.org= is a better default
+location than =/saunf/saunf.org=
 * Glossary
 :PROPERTIES:
 :CUSTOM_ID: glossary

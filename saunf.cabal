@@ -39,6 +39,7 @@ common core
     , github
     , dhall
     , directory
+    , co-log
 
   ghc-options:        -Wall
                       -Wno-name-shadowing
@@ -81,11 +82,13 @@ library
 executable saunf
   import:           core
   main-is:          Main.hs
-  -- other-modules:
+  other-modules:
+    Saunf.CLI,
+    Saunf.CLI.Commands
   -- other-extensions:
   build-depends:
-      saunf,
-      optparse-applicative
+      saunf
+    , optparse-applicative
   hs-source-dirs: app
   default-language:    Haskell2010
   ghc-options:

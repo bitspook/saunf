@@ -15,7 +15,7 @@ import Saunf.Shared
 import Saunf.Types
 import qualified Text.Pandoc as P
 
-issues :: Reader SaunfEnv [Issue]
+issues :: (MonadReader e m, HasSaunfDoc e) => m [Issue]
 issues = do
   env <- ask
   containers <- filterSections (hasCategory "issues")
@@ -27,16 +27,24 @@ issues = do
     issueId (P.Header _ (_, _, props) _) = snd <$> find (\(name, _) -> name == "issue_id") props
     issueId _ = Nothing
 
-    issuesFromContainer :: Section -> Reader SaunfEnv [Section]
+    issuesFromContainer :: (MonadReader e m, HasSaunfDoc e) => Section -> m [Section]
     issuesFromContainer = \case
       (Section (P.Header lvl _ _) body) ->
-        local (\env -> env {saunfDoc = P.Pandoc mempty body}) $
+        local (setSaunfDoc $ P.Pandoc mempty body) $
           filterSections (isHeaderWithLevel (lvl + 1))
       _ -> return []
 
-createGithubIssue :: Issue -> ReaderT SaunfEnv IO (Either GH.Error GH.Issue)
+createGithubIssue ::
+  ( MonadReader e m,
+    HasSaunfDoc e,
+    HasSaunfConf e,
+    MonadIO m,
+    P.PandocMonad m
+  ) =>
+  Issue ->
+  m (Either GH.Error GH.Issue)
 createGithubIssue (Issue _ title body) = do
-  ghConf' <- asks $ github . saunfConf
+  ghConf' <- asks $ github . getSaunfConf
   case ghConf' of
     Nothing -> error "Could not find Github configuration"
     Just (GithubConf user repo token) -> do
@@ -48,7 +56,14 @@ createGithubIssue (Issue _ title body) = do
 
       liftIO $ GH.github auth issueReq
 
-push :: ReaderT SaunfEnv IO ()
+push ::
+  ( MonadIO m,
+    MonadReader e m,
+    HasSaunfDoc e,
+    HasSaunfConf e,
+    P.PandocMonad m
+  ) =>
+  m ()
 push = do
   env <- ask
   let allIssues = runReader issues env

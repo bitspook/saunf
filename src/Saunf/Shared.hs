@@ -1,12 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Saunf.Shared where
 
-import Control.Monad.Reader
 import Data.List (intersect)
-import Data.Text (Text)
+import Relude
 import Saunf.Types
-import Saunf.Conf
 import Text.Pandoc hiding (Reader)
 import Text.Pandoc.Shared
 
@@ -29,16 +28,16 @@ isHeaderWithLevel lvl block = case block of
   (Header lvl' _ _) -> lvl == lvl'
   _ -> False
 
-filterSections :: (Block -> Bool) -> Reader SaunfEnv [Section]
+filterSections :: (MonadReader e m, HasSaunfDoc e) => (Block -> Bool) -> m [Section]
 filterSections headerMatcher = do
-  Pandoc _ bs <- asks saunfDoc
-  return $ case dropWhile isNotMatch bs of
-    h@(Header level _ _) : xs ->
-      Section h (takeWhile (sectionContent level) xs) :
-      runReader
-        (filterSections headerMatcher)
-        (SaunfEnv (Pandoc mempty (dropWhile (sectionContent level) xs)) emptyConf)
-    _ -> []
+  Pandoc _ bs <- asks getSaunfDoc
+  case dropWhile isNotMatch bs of
+    h@(Header level _ _) : xs -> do
+      let content = takeWhile (isSectionContent level) xs
+      let leftover = Pandoc mempty $ dropWhile (isSectionContent level) xs
+      remainingContent <- local (setSaunfDoc leftover) $ filterSections headerMatcher
+      return $ Section h content : remainingContent
+    _ -> return []
   where
     isNotMatch x = case x of
       Header {} -> not . headerMatcher $ x
@@ -46,9 +45,9 @@ filterSections headerMatcher = do
     isNotHeaderOfLevel lvl x = case x of
       (Header lvl' _ _) -> lvl < lvl'
       _ -> False
-    sectionContent level x = (not . isHeaderBlock) x || isNotHeaderOfLevel level x
+    isSectionContent level x = (not . isHeaderBlock) x || isNotHeaderOfLevel level x
 
-sectionsWithProperties :: [(Text, Text)] -> Reader SaunfEnv [Section]
+sectionsWithProperties :: (MonadReader e m, HasSaunfDoc e) => [(Text, Text)] -> m [Section]
 sectionsWithProperties [] = return []
 sectionsWithProperties props = filterSections filterByProps
   where
@@ -70,7 +69,14 @@ setSectionHeaderLevel n (Section h xs) = case h of
   _ -> Section h xs
 
 -- Nasty little helper to quickly render shit to markdown
-writeMd :: [Block] -> ReaderT SaunfEnv IO Text
+writeMd ::
+  ( PandocMonad m,
+    MonadReader e m,
+    HasSaunfDoc e,
+    MonadIO m
+  ) =>
+  [Block] ->
+  m Text
 writeMd bollocks = do
-  (Pandoc meta _) <- asks saunfDoc
+  (Pandoc meta _) <- asks getSaunfDoc
   liftIO $ handleError =<< runIO (writeMarkdown def $ Pandoc meta bollocks)
