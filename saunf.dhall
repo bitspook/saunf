@@ -1,8 +1,12 @@
+let VerbosityLevel = < Error | Warning | Info | Debug >
+
 let Github = { repo : Text, user : Text, token : Text }
 
 let readmePath = "./readme.md"
 
 let saunfDocPath = "./saunf/saunf.org"
+
+let verbosity = VerbosityLevel.Debug
 
 in  { saunfDocPath
     , readmePath
@@ -26,4 +30,5 @@ in  { saunfDocPath
       , repo = "saunf-test"
       , token = env:GITHUB_TOKEN as Text
       }
+    , verbosity
     }

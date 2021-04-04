@@ -1,22 +1,37 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Saunf.CLI where
 
+import qualified Colog as CL
+  ( LogAction,
+    Message,
+    Msg (..),
+    Severity (..),
+    cfilter,
+    cmap,
+    logByteStringStdout,
+    richMessageAction,
+    showSeverity,
+  )
 import Control.Monad.Reader
 import qualified Data.Text.IO as T
 import qualified Dhall (auto, input)
-import qualified Saunf.CLI.Commands as Commands
-import Saunf.Types
-import Saunf.Conf
 import Options.Applicative
+import Relude
+import qualified Saunf.CLI.Commands as Commands
+import Saunf.Conf
+import Saunf.Types
 import Text.Pandoc as P
-import Colog (richMessageAction)
 
 data CLIOptions
   = Init
   | Readme ReadmeOptions
   | GithubIssues GithubIssuesOptions
+  | Verbosity
   deriving (Show)
 
 data ReadmeOptions
@@ -51,7 +66,25 @@ cliOptions =
       <> command "gh-issues" (info (GithubIssues <$> githubIssuesOptions <**> helper) (progDesc "Manage Github issues"))
 
 cliParser :: ParserInfo CLIOptions
-cliParser = info (cliOptions <**> helper) (fullDesc <> header "Tasty project management" <> progDesc "Manage software projects with plain-text")
+cliParser =
+  info
+    (cliOptions <**> helper)
+    (fullDesc <> header "Tasty project management" <> progDesc "Manage software projects with plain-text")
+
+getLogger :: (MonadIO m) => LogVerbosity -> CL.LogAction m CL.Message
+getLogger v = case v of
+  Debug -> CL.richMessageAction
+  _ -> soberMessageAction
+  where
+    filterByVerbosity = case v of
+      Error -> CL.cfilter (\(CL.Msg sev _ _) -> sev >= CL.Error)
+      Warning  -> CL.cfilter (\(CL.Msg sev _ _) -> sev >= CL.Warning)
+      Info -> CL.cfilter (\(CL.Msg sev _ _) -> sev >= CL.Info)
+      Debug -> CL.cfilter (\(CL.Msg sev _ _) -> sev >= CL.Debug)
+    soberFmtMessage CL.Msg {..} = CL.showSeverity msgSeverity <> msgText
+    soberMessageAction =
+      filterByVerbosity $
+        CL.cmap (encodeUtf8 . soberFmtMessage) CL.logByteStringStdout
 
 buildSaunfEnv :: IO (SaunfEnv CLI)
 buildSaunfEnv = do
@@ -59,7 +92,7 @@ buildSaunfEnv = do
   pmpText <- T.readFile $ saunfDocPath conf
   saunfDoc <- P.handleError =<< P.runIO (readOrg def pmpText)
 
-  return $ SaunfEnv saunfDoc conf richMessageAction
+  return $ SaunfEnv saunfDoc conf (getLogger $ verbosity conf)
 
 run :: IO ()
 run = do

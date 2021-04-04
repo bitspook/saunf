@@ -16,19 +16,23 @@ data GithubConf = GithubConf
   }
   deriving (Generic, Show)
 
+data LogVerbosity = Error | Warning | Info | Debug deriving (Show, Generic)
+
 instance FromDhall (Name Owner)
 instance FromDhall (Name Repo)
 instance FromDhall GithubConf
+instance FromDhall LogVerbosity
 
 data SaunfConf = SaunfConf
   { readmePath :: FilePath,
     saunfDocPath :: FilePath,
     readmeTemplate :: Maybe Text,
-    github :: Maybe GithubConf
+    github :: Maybe GithubConf,
+    verbosity :: LogVerbosity
   }
   deriving (Show, Generic)
 
 instance FromDhall SaunfConf
 
 emptyConf :: SaunfConf
-emptyConf = SaunfConf "" "" Nothing Nothing
+emptyConf = SaunfConf "" "" Nothing Nothing Info
