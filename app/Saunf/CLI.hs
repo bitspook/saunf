@@ -70,6 +70,6 @@ run = do
       env <- buildSaunfEnv
 
       case val of
-        Readme PushReadme -> runReaderT (unCLI Commands.pushReadmeFile) env
+        Readme PushReadme -> P.runIOorExplode $ runReaderT (unCLI Commands.pushReadmeFile) env
         -- GithubIssues PushGHIssues -> runReaderT (unCLI $ SaunfIssues.push) env
         _ -> putStrLn "Not implemented yet 😢"

@@ -1,16 +1,25 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Saunf.CLI.Commands where
 
+import Colog
+  ( Message,
+    WithLog,
+    log,
+    pattern D,
+    pattern I,
+  )
+import qualified Data.Text.IO as T
 import Relude
-import System.Directory
-import Saunf.Types
 import Saunf.Conf
 import qualified Saunf.Readme as Saunf
+import Saunf.Types
+import System.Directory
 import Text.Pandoc as P
-import qualified Data.Text.IO as T
 
 init :: IO ()
 init = do
@@ -30,27 +39,27 @@ init = do
         \    }"
 
   hasExistingSaunfConf <- doesFileExist confFileName
-  if hasExistingSaunfConf
-    then
-      die
-        "Found existing saunf conf (saunf.dhall). \n\
-        \Please delete it if you want to overwrite the saunf conf"
-    else return ()
+  when
+    hasExistingSaunfConf
+    $ die
+      "Found existing saunf conf (saunf.dhall). \n\
+      \Please delete it if you want to overwrite the saunf conf"
   writeFileText confFileName defaultTemplate
 
 -- Create a readme doc, and push it to readme.md
 pushReadmeFile ::
-  ( MonadIO m,
-    MonadReader e m,
+  ( WithLog e Message m,
     HasSaunfDoc e,
-    HasSaunfConf e
+    HasSaunfConf e,
+    PandocMonad m,
+    MonadIO m
   ) =>
   m ()
 pushReadmeFile = do
   dest <- asks $ readmePath . getSaunfConf
-  env <- ask
 
-  readme' <- liftIO $ P.runIO $ runReaderT Saunf.readme env
-  readme <- liftIO $ P.handleError readme'
+  readme <- Saunf.readme
 
+  log D "Writing readme file"
   liftIO $ T.writeFile dest readme
+  log I $ "readme written successfully to: " <> toText dest

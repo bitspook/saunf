@@ -1,18 +1,19 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Saunf.Types where
 
 import Colog
-import Saunf.Conf
 import Relude
-import Text.Pandoc (Block, Pandoc)
+import Saunf.Conf
+import Control.Monad.Error.Class (MonadError)
+import Text.Pandoc (Block, Pandoc, PandocMonad, PandocError, PandocIO)
 
 -- | Pandoc don't have a concept of sections, but org-mode do. A section is
 -- | essentially everything that follows a header (inclusive), until another
@@ -45,9 +46,17 @@ instance HasLog (SaunfEnv m) Message m where
   {-# INLINE setLogAction #-}
 
 newtype CLI a = CLI
-  { unCLI :: ReaderT (SaunfEnv CLI) IO a
+  { unCLI :: ReaderT (SaunfEnv CLI) PandocIO a
   }
-  deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader (SaunfEnv CLI))
+  deriving newtype
+    ( Functor,
+      Applicative,
+      Monad,
+      MonadIO,
+      MonadReader (SaunfEnv CLI),
+      MonadError PandocError,
+      PandocMonad
+    )
 
 class HasSaunfDoc a where
   getSaunfDoc :: a -> Pandoc
@@ -58,7 +67,7 @@ class HasSaunfConf a where
 
 instance HasSaunfDoc (SaunfEnv m) where
   getSaunfDoc (SaunfEnv doc _ _) = doc
-  setSaunfDoc doc env = env { saunfDoc = doc }
+  setSaunfDoc doc env = env {saunfDoc = doc}
 
 instance HasSaunfConf (SaunfEnv m) where
   getSaunfConf (SaunfEnv _ conf _) = conf

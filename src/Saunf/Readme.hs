@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
@@ -11,6 +12,7 @@ module Saunf.Readme
   )
 where
 
+import Colog (Message, WithLog, log, pattern D, pattern E)
 import Data.Aeson
 import Relude hiding ((<|>))
 import Saunf.Conf
@@ -92,23 +94,31 @@ instance ToJSON ReadmeContext where
 -- | Resolve Saunf-special syntax from readme-template given in conf, populates
 -- it with variables, and produce final Readme file's content in markdown format
 readme ::
-  ( MonadIO m,
-    MonadReader e m,
-    HasSaunfDoc e,
+  ( HasSaunfDoc e,
     HasSaunfConf e,
+    WithLog e Message m,
+    MonadIO m,
     PandocMonad m
   ) =>
   m Text
 readme = do
   sDoc@(Pandoc meta _) <- asks getSaunfDoc
+  log D "Sobering up saunf-syntax from readme template"
   soberTemplate <- soberReadmeTemplate
 
   let title = lookupMetaString "title" meta
+
+  log D "Rendering description to markdown"
   description <- writeMd $ fromMaybe mempty (findDescription sDoc)
 
   let context = ReadmeContext title description
 
+  log D "Compiling sober readme template"
   tc <- liftIO $ compileTemplate "readme.md" soberTemplate
   case tc of
-    Left e -> error (Relude.toText e)
-    Right t -> return $ render Nothing $ renderTemplate t (toJSON context)
+    Left e -> do
+      log E $ "Encountered error when parsing readme template.\n" <> Relude.toText e
+      error (Relude.toText e)
+    Right t -> do
+      log D "Rendering compiled readme template"
+      return $ render Nothing $ renderTemplate t (toJSON context)
