@@ -191,6 +191,8 @@ Lint:
 - test/**/*.hs using hlint
 - saunf.cabal using https://github.com/sdiehl/cabal-edit
 
+** Use cabal mixins technique to use Relude as default prelude
+- Remove the =NoImplicitPrelude= language pragmas
 * Glossary
 :PROPERTIES:
 :CUSTOM_ID: glossary

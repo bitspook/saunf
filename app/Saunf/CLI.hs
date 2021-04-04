@@ -25,28 +25,8 @@ import Relude
 import qualified Saunf.CLI.Commands as Commands
 import Saunf.Conf
 import Saunf.Types
+import Saunf.CLI.Types
 import Text.Pandoc as P
-
-data CLICommands
-  = Init
-  | Readme ReadmeOptions
-  | GithubIssues GithubIssuesOptions
-  deriving (Show)
-
-data CLIOptions = CLIOptions
-  { optCommand :: CLICommands,
-    debug :: Bool
-  }
-
-data ReadmeOptions
-  = PushReadme -- Push changes to readme
-  | PullReadme -- Pull changes back from readme
-  deriving (Show)
-
-data GithubIssuesOptions
-  = PushGHIssues -- Push new issues to Github
-  | PullGHIssues -- Pull new issues from Github
-  deriving (Show)
 
 readmeOptions :: Parser ReadmeOptions
 readmeOptions =

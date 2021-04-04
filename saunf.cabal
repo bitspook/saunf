@@ -85,6 +85,7 @@ executable saunf
   other-modules:
     Saunf.CLI,
     Saunf.CLI.Commands
+    Saunf.CLI.Types
   -- other-extensions:
   build-depends:
       saunf
