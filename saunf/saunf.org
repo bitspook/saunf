@@ -147,13 +147,6 @@ At its bare minimum, Saunf should
 :CATEGORY: issues
 :END:
 
-*** DONE User should be able to define a readme template within saunf-doc
-CLOSED: [2021-02-03 Wed 11:48]
-*** DONE User should be able to inject sections from saunf-doc in the readme template
-CLOSED: [2021-02-03 Wed 11:51]
-- It should be possible to pick a section from any level, and drop it in readme
-  at any level. e.g I should be able to take a level 4 section from saunf-doc,
-  and add it as a level 2 section in my readme
 *** TODO Links to glossary terms should be added as link titles in readme
 so that github users can see the term definition by hovering over it.
 
@@ -177,11 +170,27 @@ so that github users can see the term definition by hovering over it.
 Tables in saunf-doc gets exported as =[TABLE]= in readme.md. Pandoc itself is
 able to export org tables, but saunf for some reason is behaving like this.
 * Tasks
-** DONE Make saunf-doc configurable                            :enhancement:
-CLOSED: [2021-04-03 Sat 17:20]
-saunf-doc is hardheaded to be =/saunf/saunf.org=, it should be configurable from
-conf, with a reasonable default. I think =saunf.org= is a better default
-location than =/saunf/saunf.org=
+** Add =fmt= as nix devshell command which format all source files
+https://github.com/numtide/devshell
+
+Format:
+- flake.nix using nixpkg-fmt
+- saunf.dhall using dhall
+- src/**/*.hs using ormolu
+- test/**/*.hs using ormolu
+- app/**/*.hs using ormolu
+- saunf.cabal using https://github.com/sdiehl/cabal-edit
+
+** Add =lint= as nix devshell command to run lint on all source files
+
+Lint:
+- flake.nix if possible
+- saunf.dhall using dhall
+- src/**/*.hs using hlint
+- app/**/*.hs using hlint
+- test/**/*.hs using hlint
+- saunf.cabal using https://github.com/sdiehl/cabal-edit
+
 * Glossary
 :PROPERTIES:
 :CUSTOM_ID: glossary
