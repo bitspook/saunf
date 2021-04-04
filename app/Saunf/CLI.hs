@@ -27,12 +27,16 @@ import Saunf.Conf
 import Saunf.Types
 import Text.Pandoc as P
 
-data CLIOptions
+data CLICommands
   = Init
   | Readme ReadmeOptions
   | GithubIssues GithubIssuesOptions
-  | Verbosity
   deriving (Show)
+
+data CLIOptions = CLIOptions
+  { optCommand :: CLICommands,
+    debug :: Bool
+  }
 
 data ReadmeOptions
   = PushReadme -- Push changes to readme
@@ -58,12 +62,18 @@ githubIssuesOptions =
         <> command "pull" (info (pure PullGHIssues) (progDesc "Pull new Github issues"))
     )
 
-cliOptions :: Parser CLIOptions
-cliOptions =
+cliCommands :: Parser CLICommands
+cliCommands =
   subparser $
     command "init" (info (pure Init) (progDesc "Initialize a saunf in a project with default conf"))
       <> command "readme" (info (Readme <$> readmeOptions <**> helper) (progDesc "Manage the readme file"))
       <> command "gh-issues" (info (GithubIssues <$> githubIssuesOptions <**> helper) (progDesc "Manage Github issues"))
+
+cliOptions :: Parser CLIOptions
+cliOptions =
+  CLIOptions
+    <$> cliCommands
+    <*> switch (long "debug" <> help "Show very verbose logs for debugging")
 
 cliParser :: ParserInfo CLIOptions
 cliParser =
@@ -78,7 +88,7 @@ getLogger v = case v of
   where
     filterByVerbosity = case v of
       Error -> CL.cfilter (\(CL.Msg sev _ _) -> sev >= CL.Error)
-      Warning  -> CL.cfilter (\(CL.Msg sev _ _) -> sev >= CL.Warning)
+      Warning -> CL.cfilter (\(CL.Msg sev _ _) -> sev >= CL.Warning)
       Info -> CL.cfilter (\(CL.Msg sev _ _) -> sev >= CL.Info)
       Debug -> CL.cfilter (\(CL.Msg sev _ _) -> sev >= CL.Debug)
     soberFmtMessage CL.Msg {..} = CL.showSeverity msgSeverity <> msgText
@@ -86,23 +96,24 @@ getLogger v = case v of
       filterByVerbosity $
         CL.cmap (encodeUtf8 . soberFmtMessage) CL.logByteStringStdout
 
-buildSaunfEnv :: IO (SaunfEnv CLI)
-buildSaunfEnv = do
+buildSaunfEnv :: Bool -> IO (SaunfEnv CLI)
+buildSaunfEnv isDebugEnabled = do
   conf <- Dhall.input Dhall.auto "./saunf.dhall"
   pmpText <- T.readFile $ saunfDocPath conf
   saunfDoc <- P.handleError =<< P.runIO (readOrg def pmpText)
+  let logVerbosity = if isDebugEnabled then Debug else verbosity conf
 
-  return $ SaunfEnv saunfDoc conf (getLogger $ verbosity conf)
+  return $ SaunfEnv saunfDoc conf (getLogger logVerbosity)
 
 run :: IO ()
 run = do
-  val <- execParser cliParser
-  case val of
+  (CLIOptions cmds isDebugEnabled) <- execParser cliParser
+  case cmds of
     Init -> Commands.init
     _ -> do
-      env <- buildSaunfEnv
+      env <- buildSaunfEnv isDebugEnabled
 
-      case val of
+      case cmds of
         Readme PushReadme -> P.runIOorExplode $ runReaderT (unCLI Commands.pushReadmeFile) env
         -- GithubIssues PushGHIssues -> runReaderT (unCLI $ SaunfIssues.push) env
         _ -> putStrLn "Not implemented yet 😢"
