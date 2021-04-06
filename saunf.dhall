@@ -6,7 +6,7 @@ let readmePath = "./readme.md"
 
 let saunfDocPath = "./saunf/saunf.org"
 
-let verbosity = VerbosityLevel.Error
+let verbosity = VerbosityLevel.Info
 
 in  { saunfDocPath
     , readmePath

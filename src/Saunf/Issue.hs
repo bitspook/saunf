@@ -1,9 +1,19 @@
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Saunf.Issue where
 
+import Colog
+  ( Message,
+    WithLog,
+    log,
+    pattern D,
+    pattern E,
+    pattern I,
+  )
 import Control.Monad.Reader
 import qualified GitHub.Auth as GH
 import qualified GitHub.Data.Issues as GH
@@ -35,43 +45,28 @@ issues = do
       _ -> return []
 
 createGithubIssue ::
-  ( MonadReader e m,
-    HasSaunfDoc e,
+  ( HasSaunfDoc e,
     HasSaunfConf e,
     MonadIO m,
+    WithLog e Message m,
     P.PandocMonad m
   ) =>
   Issue ->
-  m (Either GH.Error GH.Issue)
+  m (Either SaunfError GH.Issue)
 createGithubIssue (Issue _ title body) = do
   ghConf' <- asks $ github . getSaunfConf
   case ghConf' of
-    Nothing -> error "Could not find Github configuration"
+    Nothing -> return $ Left (SaunfConfError "Missing github configuration")
     Just (GithubConf user repo token) -> do
       let auth = GH.OAuth (encodeUtf8 token)
+
       titleText <- writeMd [title]
       bodyText <- writeMd body
+
       let newGhIssue = (GH.newIssue titleText) {GH.newIssueBody = Just bodyText}
       let issueReq = GH.createIssueR user repo newGhIssue
 
-      liftIO $ GH.github auth issueReq
+      log D $ "Creating Github issue: " <> "\n\t" <> titleText <> "\n\t" <> bodyText
+      result <- liftIO $ GH.github auth issueReq
 
-push ::
-  ( MonadIO m,
-    MonadReader e m,
-    HasSaunfDoc e,
-    HasSaunfConf e,
-    P.PandocMonad m
-  ) =>
-  m ()
-push = do
-  env <- ask
-  let allIssues = runReader issues env
-  let newIssues = filter (isNothing . issueId) allIssues
-  createdIssues <- mapM createGithubIssue newIssues
-  mapM_ (liftIO . handleCreatedIssue) createdIssues
-  where
-    handleCreatedIssue :: Either GH.Error GH.Issue -> IO ()
-    handleCreatedIssue = \case
-      Left err -> putStrLn $ "Failed to create Github issue: " ++ show err
-      Right issue -> putStrLn $ "Successfully created Github issue: " ++ show issue
+      return $ first GithubError result

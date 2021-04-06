@@ -95,5 +95,5 @@ run = do
 
       case cmds of
         Readme PushReadme -> P.runIOorExplode $ runReaderT (unCLI Commands.pushReadmeFile) env
-        -- GithubIssues PushGHIssues -> runReaderT (unCLI $ SaunfIssues.push) env
+        GithubIssues PushGHIssues -> P.runIOorExplode $ runReaderT (unCLI Commands.pushGithubIssues) env
         _ -> putStrLn "Not implemented yet 😢"

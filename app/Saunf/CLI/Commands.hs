@@ -11,15 +11,18 @@ import Colog
     WithLog,
     log,
     pattern D,
+    pattern E,
     pattern I,
   )
 import qualified Data.Text.IO as T
 import Relude
 import Saunf.Conf
+import Saunf.Issue
 import qualified Saunf.Readme as Saunf
 import Saunf.Types
 import System.Directory
 import Text.Pandoc as P
+import qualified GitHub.Data.Issues as GH
 
 init :: IO ()
 init = do
@@ -63,3 +66,28 @@ pushReadmeFile = do
   log D "Writing readme file"
   liftIO $ T.writeFile dest readme
   log I $ "readme written successfully to: " <> toText dest
+
+pushGithubIssues ::
+  ( WithLog e Message m,
+    HasSaunfDoc e,
+    HasSaunfConf e,
+    P.PandocMonad m,
+    MonadIO m
+  ) =>
+  m ()
+pushGithubIssues = do
+  allIssues <- issues
+  log D $ "Found " <> show (length allIssues) <> " total issues"
+
+  let newIssues = filter (isNothing . issueId) allIssues
+  log I $ "Found " <> show (length newIssues) <> " new issues"
+
+  mapM_ createGhIssue' newIssues
+  where
+    createGhIssue' i = do
+      response <- createGithubIssue i
+      case response of
+        Left err -> case err of
+          GithubError e -> log E $ "[Github error] " <> show e
+          _ -> log E $ show err
+        Right issue -> log I $ "Successfully created Github issue: " <> show (GH.issueUrl issue)

@@ -10,6 +10,7 @@ import Colog
     LogAction,
     Message,
   )
+import qualified GitHub.Data.Definitions as GH
 import Relude
 import Saunf.Conf
 import Text.Pandoc (Block, Pandoc)
@@ -57,3 +58,8 @@ instance HasSaunfDoc (SaunfEnv m) where
 
 instance HasSaunfConf (SaunfEnv m) where
   getSaunfConf (SaunfEnv _ conf _) = conf
+
+data SaunfError
+  = GithubError GH.Error
+  | SaunfConfError Text
+  deriving (Show)
