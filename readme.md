@@ -65,11 +65,13 @@ At its bare minimum, Saunf should
 -   sync readme file
     -   \[X\] Push changes from saunf-doc to readme
     -   \[ \] Pull changes from readme to saunf-doc
+    -   \[ \] Enrich readme with glossary terms
 -   sync github issues
     -   \[ \] Push new issues to github
-    -   \[ \] Push changes to github
+    -   \[ \] Push changed issues to github
     -   \[ \] Pull new issues from github
-    -   \[ \] Pull changes from github
+    -   \[ \] Pull changed issues from github
+    -   \[ \] Enrich github issues with glossary terms
 
 ## Usage
 
