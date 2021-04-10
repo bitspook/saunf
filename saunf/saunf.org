@@ -157,7 +157,12 @@ so that github users can see the term definition by hovering over it.
 :CATEGORY: issues
 :END:
 
-*** TODO User should be able to push new issues to github issues
+*** DONE User should be able to push new issues to github issues
+CLOSED: [2021-04-10 Sat 22:22]
+*** TODO Newly created issues should update saunf-doc with the issue ID
+
+When an issue is created, it should add =ISSUE_ID= property to the issue subtree
+in saunf-doc
 *** TODO Allow pushing a single issue to github
 *** TODO Create emacs package which can interact with Saunf
 - [ ] Push readme
@@ -166,6 +171,7 @@ so that github users can see the term definition by hovering over it.
 *** TODO User should be able to update github issues
 - [ ] Close and re-open issues
 - [ ] Change issue title and description
+*** TODO Creating an issue should update tags as github labels
 *** TODO User should be able to pull new issues from github issues
 *** TODO User should be able to pull changes to existing issues from github issues
 * Bugs                                                                  :bug:
@@ -176,6 +182,10 @@ so that github users can see the term definition by hovering over it.
 
 Tables in saunf-doc gets exported as =[TABLE]= in readme.md. Pandoc itself is
 able to export org tables, but saunf for some reason is behaving like this.
+** TODO =gh-issues push= consider "DONE" issues as new
+
+Concerned function: =filterNewIssues= at saunf/src/Saunf/Issue.hs:94
+
 * Tasks
 :PROPERTIES:
 :CATEGORY: issues
