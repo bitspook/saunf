@@ -13,7 +13,7 @@ import Colog
 import qualified GitHub.Data.Definitions as GH
 import Relude
 import Saunf.Conf
-import Text.Pandoc (Block, Pandoc)
+import Text.Pandoc (Block, Pandoc, Inline)
 
 -- | Pandoc don't have a concept of sections, but org-mode do. A section is
 -- | essentially everything that follows a header (inclusive), until another
@@ -22,8 +22,9 @@ data Section = Section {sectionTitle :: Block, sectionBody :: [Block]} deriving 
 
 data Issue = Issue
   { issueId :: Maybe Text,
-    issueTitle :: Block,
-    issueBody :: [Block]
+    issueTitle :: [Inline],
+    issueBody :: [Block],
+    issueMeta :: [(Text, Text)]
   }
   deriving (Show, Eq)
 
