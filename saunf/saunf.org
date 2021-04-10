@@ -158,6 +158,11 @@ so that github users can see the term definition by hovering over it.
 :END:
 
 *** TODO User should be able to push new issues to github issues
+*** TODO Allow pushing a single issue to github
+*** TODO Create emacs package which can interact with Saunf
+- [ ] Push readme
+- [ ] Push issues to github
+- [ ] Push an individual issue to github
 *** TODO User should be able to update github issues
 - [ ] Close and re-open issues
 - [ ] Change issue title and description
@@ -175,7 +180,7 @@ able to export org tables, but saunf for some reason is behaving like this.
 :PROPERTIES:
 :CATEGORY: issues
 :END:
-** Add =fmt= as nix devshell command which format all source files   :chore:
+** TODO Add =fmt= as nix devshell command which format all source files :chore:
 https://github.com/numtide/devshell
 
 Format:
@@ -186,7 +191,7 @@ Format:
 - app/**/*.hs using ormolu
 - saunf.cabal using https://github.com/sdiehl/cabal-edit
 
-** Add =lint= as nix devshell command to run lint on all source files :chore:
+** TODO Add =lint= as nix devshell command to run lint on all source files :chore:
 
 Lint:
 - flake.nix if possible
@@ -196,8 +201,10 @@ Lint:
 - test/**/*.hs using hlint
 - saunf.cabal using https://github.com/sdiehl/cabal-edit
 
-** Use cabal mixins technique to use Relude as default prelude       :chore:
+** TODO Use cabal mixins technique to use Relude as default prelude  :chore:
 - Remove the =NoImplicitPrelude= language pragmas
+** TODO Add ability to configure todo statuses in saunf-conf   :enhancement:
+** TODO If a section don't have any todo status, don't add =(todo,"")= tuple to sterileSectionHeader's metadata :tech:debt:
 * Glossary
 :PROPERTIES:
 :CUSTOM_ID: glossary
