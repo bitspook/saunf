@@ -24,7 +24,7 @@ spec = do
       orgFile <- readOrg' ""
       let result = runReader issues (env {saunfDoc = orgFile})
       let expected =
-            (\(Section title body) -> Issue Nothing title body)
+            (\(Section title body) -> Issue Nothing (inlines title) body [])
               <$> runReader (filterSections (const True)) env
 
       result `shouldBe` expected
@@ -41,8 +41,8 @@ spec = do
       let result = runReader issues (env {saunfDoc = orgFile})
 
       let expected =
-            [ Issue Nothing (Header 2 ("", [], []) [Str "Issue", Space, Str "1"]) [],
-              Issue Nothing (Header 2 ("", [], []) [Str "Issue", Space, Str "2"]) []
+            [ Issue Nothing [Str "Issue", Space, Str "1"] [] [("todo", "")],
+              Issue Nothing [Str "Issue", Space, Str "2"] [] [("todo", "")]
             ]
 
       result `shouldBe` expected
@@ -62,8 +62,8 @@ spec = do
       let result = runReader issues (env {saunfDoc = orgFile})
 
       let expected =
-            [ Issue (Just "23") (Header 2 ("", [], [("issue_id", "23")]) [Str "Issue", Space, Str "1"]) [],
-              Issue Nothing (Header 2 ("", [], []) [Str "Issue", Space, Str "2"]) []
+            [ Issue (Just "23") [Str "Issue", Space, Str "1"] [] [("issue_id", "23"), ("todo", "")],
+              Issue Nothing [Str "Issue", Space, Str "2"] [] [("todo", "")]
             ]
 
       result `shouldBe` expected

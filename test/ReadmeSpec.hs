@@ -49,6 +49,7 @@ spec = do
                   \## $#features$ \n"
               )
               Nothing
+              Info
       soberTemplate' <- P.runIO $ runReaderT soberReadmeTemplate (env {saunfDoc = orgFile, saunfConf = conf})
       soberTemplate <- P.handleError soberTemplate'
 
@@ -84,6 +85,7 @@ spec = do
                   \## $#features$ \n"
               )
               Nothing
+              Info
       soberTemplate' <- P.runIO $ runReaderT soberReadmeTemplate (env {saunfDoc = orgFile, saunfConf = conf})
       soberTemplate <- P.handleError soberTemplate'
 
@@ -122,6 +124,7 @@ spec = do
                   \## $#features$ \n"
               )
               Nothing
+              Info
       soberTemplate' <- P.runIO $ runReaderT soberReadmeTemplate (env {saunfDoc = orgFile, saunfConf = conf})
       soberTemplate <- P.handleError soberTemplate'
 
