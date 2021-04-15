@@ -4,7 +4,7 @@
   # To update all inputs:
   # $ nix flake update --recreate-lock-file
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/master";
     flake-utils.url = "github:numtide/flake-utils/master";
   };
 
