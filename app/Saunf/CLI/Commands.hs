@@ -15,6 +15,7 @@ import Colog
     pattern I,
   )
 import qualified Data.Text.IO as T
+import qualified GitHub.Data.Issues as GH
 import Relude
 import Saunf.Conf
 import Saunf.Issue
@@ -22,7 +23,6 @@ import qualified Saunf.Readme as Saunf
 import Saunf.Types
 import System.Directory
 import Text.Pandoc as P
-import qualified GitHub.Data.Issues as GH
 
 init :: IO ()
 init = do
@@ -91,3 +91,21 @@ pushGithubIssues = do
           GithubError e -> log E $ "[Github error] " <> show e
           _ -> log E $ show err
         Right issue -> log I $ "Successfully created Github issue: " <> show (GH.issueUrl issue)
+
+format ::
+  ( WithLog e Message m,
+    HasSaunfDoc e,
+    HasSaunfConf e,
+    PandocMonad m,
+    MonadIO m
+  ) =>
+  m ()
+format = do
+  dest <- asks $ saunfDocPath . getSaunfConf
+  doc <- asks getSaunfDoc
+
+  formattedDoc <- P.writeOrg P.def{P.writerExtensions=(P.getDefaultExtensions "org")} doc
+
+  liftIO $ writeFile dest (toString formattedDoc)
+
+  return ()

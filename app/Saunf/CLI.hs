@@ -23,10 +23,10 @@ import qualified Dhall (auto, input)
 import Options.Applicative
 import Relude
 import qualified Saunf.CLI.Commands as Commands
+import Saunf.CLI.Types
 import Saunf.Conf
 import Saunf.Types
-import Saunf.CLI.Types
-import Text.Pandoc as P
+import qualified Text.Pandoc as P
 
 readmeOptions :: Parser ReadmeOptions
 readmeOptions =
@@ -46,6 +46,7 @@ cliCommands :: Parser CLICommands
 cliCommands =
   subparser $
     command "init" (info (pure Init) (progDesc "Initialize a saunf in a project with default conf"))
+      <> command "fmt" (info (pure Format) (progDesc "Format the saunf doc in optimal formatting for minimal diffs when saunf need to update saunf-doc"))
       <> command "readme" (info (Readme <$> readmeOptions <**> helper) (progDesc "Manage the readme file"))
       <> command "gh-issues" (info (GithubIssues <$> githubIssuesOptions <**> helper) (progDesc "Manage Github issues"))
 
@@ -80,20 +81,23 @@ buildSaunfEnv :: Bool -> IO (SaunfEnv CLI)
 buildSaunfEnv isDebugEnabled = do
   conf <- Dhall.input Dhall.auto "./saunf.dhall"
   pmpText <- T.readFile $ saunfDocPath conf
-  saunfDoc <- P.handleError =<< P.runIO (readOrg def pmpText)
+  saunfDoc <- P.handleError =<< P.runIO (P.readOrg P.def pmpText)
   let logVerbosity = if isDebugEnabled then Debug else verbosity conf
 
   return $ SaunfEnv saunfDoc conf (getLogger logVerbosity)
 
 run :: IO ()
 run = do
-  (CLIOptions cmds isDebugEnabled) <- execParser cliParser
-  case cmds of
+  (CLIOptions cmd isDebugEnabled) <- execParser cliParser
+  case cmd of
     Init -> Commands.init
     _ -> do
       env <- buildSaunfEnv isDebugEnabled
 
-      case cmds of
-        Readme PushReadme -> P.runIOorExplode $ runReaderT (unCLI Commands.pushReadmeFile) env
-        GithubIssues PushGHIssues -> P.runIOorExplode $ runReaderT (unCLI Commands.pushGithubIssues) env
-        _ -> putStrLn "Not implemented yet 😢"
+      let cmd' = case cmd of
+            Format -> Commands.format
+            Readme PushReadme -> Commands.pushReadmeFile
+            GithubIssues PushGHIssues -> Commands.pushGithubIssues
+            _ -> putStrLn "Not implemented yet 😢"
+
+      P.runIOorExplode $ runReaderT (unCLI cmd') env

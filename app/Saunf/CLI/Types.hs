@@ -29,6 +29,7 @@ data CLIOptions = CLIOptions
 
 data CLICommands
   = Init
+  | Format
   | Readme ReadmeOptions
   | GithubIssues GithubIssuesOptions
   deriving (Show)
