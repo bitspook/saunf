@@ -19,6 +19,7 @@ import qualified GitHub.Data.Issues as GH
 import Relude
 import Saunf.Conf
 import Saunf.Issue
+import Saunf.Pandoc.Writer.Org as SP
 import qualified Saunf.Readme as Saunf
 import Saunf.Types
 import System.Directory
@@ -104,7 +105,13 @@ format = do
   dest <- asks $ saunfDocPath . getSaunfConf
   doc <- asks getSaunfDoc
 
-  formattedDoc <- P.writeOrg P.def{P.writerExtensions=(P.getDefaultExtensions "org")} doc
+  formattedDoc <-
+    SP.writeOrg
+      P.def
+        { P.writerExtensions = (P.getDefaultExtensions "org"),
+          P.writerWrapText = P.WrapPreserve
+        }
+      doc
 
   liftIO $ writeFile dest (toString formattedDoc)
 
