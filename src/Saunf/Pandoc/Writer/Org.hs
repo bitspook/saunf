@@ -7,6 +7,7 @@ import Control.Monad.State.Strict
 import Data.Char (isAlphaNum, isDigit)
 import Data.List (intersect, intersperse, partition, transpose)
 import Data.List.NonEmpty (nonEmpty)
+import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
 import Text.DocLayout
@@ -50,10 +51,11 @@ pandocToOrg (Pandoc meta blocks) = do
       blockListToOrg
       (fmap chomp . inlineListToOrg)
       meta
+  preface <- metaToOrg meta
   body <- blockListToOrg blocks
   notes <- gets (reverse . stNotes) >>= notesToOrg
   hasMath <- gets stHasMath
-  let main = body $+$ notes
+  let main = preface $+$ body $+$ notes
   let context =
         defField "body" main
           . defField "math" hasMath
@@ -63,6 +65,31 @@ pandocToOrg (Pandoc meta blocks) = do
       case writerTemplate opts of
         Nothing -> main
         Just tpl -> renderTemplate tpl context
+
+-- | Convert Pandoc Meta to org preface. Unlike other markup formats, metadata
+-- is not foreign to org-mode. It is crucial to write the metadata back when
+-- writing an org doc
+metaToOrg :: PandocMonad m => Meta -> Org m (Doc Text)
+metaToOrg meta = vsep <$> mapM metaItemToOrg (M.toList $ unMeta meta)
+
+metaItemToOrg :: PandocMonad m => (Text, MetaValue) -> Org m (Doc Text)
+metaItemToOrg (key, val) = do
+  val' <- metaValToOrg val
+  return $ key' <> val'
+  where
+    key' = literal "#+" <> literal key <> ": "
+
+-- TODO: Not sure how good this function do; need to verify when metaVal is a
+-- list and map of values
+metaValToOrg :: PandocMonad m => MetaValue -> Org m (Doc Text)
+metaValToOrg val = case val of
+  MetaBool True -> return "t"
+  MetaBool False -> return "nil"
+  MetaInlines is -> inlineListToOrg is
+  MetaBlocks bs -> blockListToOrg bs
+  MetaString t -> return $ literal t
+  MetaMap m -> vsep <$> mapM metaItemToOrg (M.toList m)
+  MetaList xs -> vsep <$> mapM metaValToOrg xs
 
 -- | Return Org representation of notes.
 notesToOrg :: PandocMonad m => [[Block]] -> Org m (Doc Text)
