@@ -159,7 +159,7 @@ blockToOrg (RawBlock "html" str) =
       $$ nest 2 (literal str)
       $$ "#+end_html"
       $$ blankline
-blockToOrg b@(RawBlock f str)
+blockToOrg (RawBlock f str)
   | isRawFormat f = return $ literal str
   | otherwise = do
     return empty
@@ -170,7 +170,7 @@ blockToOrg (Header level attr inlines) = do
   let drawerStr =
         if attr == nullAttr
           then empty
-          else cr <> nest (level + 1) (propertiesDrawer attr)
+          else cr <> propertiesDrawer attr
   return $ headerStr <> " " <> contents <> drawerStr <> cr
 blockToOrg (CodeBlock (_, classes, kvs) str) = do
   let startnum = maybe "" (\x -> " " <> trimr x) $ lookup "startFrom" kvs
@@ -492,7 +492,7 @@ inlineToOrg (Math t str) = do
     if t == InlineMath
       then "\\(" <> literal str <> "\\)"
       else "\\[" <> literal str <> "\\]"
-inlineToOrg il@(RawInline f str)
+inlineToOrg (RawInline f str)
   | isRawFormat f = return $ literal str
   | otherwise = do
     return empty
