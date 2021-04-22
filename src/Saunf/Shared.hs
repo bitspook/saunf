@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Saunf.Shared where
 
@@ -9,8 +10,10 @@ import Data.List (intersect)
 import Data.Text (toUpper)
 import Relude
 import Saunf.Types
+import qualified Data.Map as M
 import qualified Text.Pandoc as P hiding (Reader)
 import qualified Text.Pandoc.Shared as P
+import qualified Text.Parsec as Parsec
 
 hasId :: Text -> P.Block -> Bool
 hasId cid b = case b of
@@ -122,3 +125,42 @@ sterileSectionHeader = \case
           ++ [("todo", fst . fst $ exploded)]
           ++ (("tag",) <$> (snd . fst) exploded)
   xs -> xs
+
+-- | Try to parse a given string as org-mode meta value. It expects strings of
+-- form "#+KEY: val", e.g obtained from RawBlock Blocks returned by readOrg of
+-- Pandoc
+-- FIXME: This function returns all the meta-values as Text. It is possible to
+-- provide better values, e.g t/nil can be converted to True/Falsje
+metaValParser :: Parsec.Parsec Text () (Map Text P.MetaValue)
+metaValParser = do
+  _ <- Parsec.string "#+"
+  name <- Parsec.manyTill Parsec.anyChar (Parsec.try $ Parsec.char ':')
+  _ <- Parsec.spaces
+  val <- Parsec.many Parsec.anyChar
+
+  return $ M.singleton (toText name) (P.MetaString $ toText val)
+
+-- | Read the SaunfDoc from given org content. It differs from Pandoc's readOrg
+-- in following ways:
+--
+-- * Additional meta values (#+KEY: Val) in org header are loaded in Pandoc Meta
+--   instead of adding them as RawText Blocks in Pandoc body. Please note that
+--   all additional meta values are read as-is as Text as of now
+readSaunfDoc :: (P.PandocMonad m) => Text -> m P.Pandoc
+readSaunfDoc content = do
+  (P.Pandoc meta body) <- P.readOrg P.def content
+
+  let extraMeta = mconcat $ metaEls <$> takeWhile isMetaBlock body
+  let newMeta = meta <> P.Meta extraMeta
+  let newBody = dropWhile isMetaBlock body
+
+  return $ P.Pandoc newMeta newBody
+  where
+    isMetaBlock :: P.Block -> Bool
+    isMetaBlock (P.RawBlock (P.Format "org") _) = True
+    isMetaBlock _ = False
+
+    metaEls :: P.Block -> M.Map Text P.MetaValue
+    metaEls (P.RawBlock (P.Format "org") val) =
+      fromRight M.empty $ Parsec.parse metaValParser (toString val) val
+    metaEls _ = mempty

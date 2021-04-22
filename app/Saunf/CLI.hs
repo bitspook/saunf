@@ -26,6 +26,7 @@ import qualified Saunf.CLI.Commands as Commands
 import Saunf.CLI.Types
 import Saunf.Conf
 import Saunf.Types
+import Saunf.Shared (readSaunfDoc)
 import qualified Text.Pandoc as P
 
 readmeOptions :: Parser ReadmeOptions
@@ -81,7 +82,7 @@ buildSaunfEnv :: Bool -> IO (SaunfEnv CLI)
 buildSaunfEnv isDebugEnabled = do
   conf <- Dhall.input Dhall.auto "./saunf.dhall"
   pmpText <- T.readFile $ saunfDocPath conf
-  saunfDoc <- P.handleError =<< P.runIO (P.readOrg P.def pmpText)
+  saunfDoc <- P.handleError =<< P.runIO (readSaunfDoc pmpText)
   let logVerbosity = if isDebugEnabled then Debug else verbosity conf
 
   return $ SaunfEnv saunfDoc conf (getLogger logVerbosity)
