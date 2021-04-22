@@ -70,7 +70,7 @@ pandocToOrg (Pandoc meta blocks) = do
 -- is not foreign to org-mode. It is crucial to write the metadata back when
 -- writing an org doc
 metaToOrg :: PandocMonad m => Meta -> Org m (Doc Text)
-metaToOrg meta = vsep <$> mapM metaItemToOrg (M.toList $ unMeta meta)
+metaToOrg meta = vcat <$> mapM metaItemToOrg (M.toList $ unMeta meta)
 
 metaItemToOrg :: PandocMonad m => (Text, MetaValue) -> Org m (Doc Text)
 metaItemToOrg (key, val) = do
