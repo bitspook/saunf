@@ -15,7 +15,7 @@ spec = do
   describe "filterSections" $ do
     it "returns Nothing if section with given matcher is not found" $ do
       doc <- readOrg' "#+title: Title *from* Meta\n\nThis is the description\n\n* First Section "
-      let sections = runReader (filterSections (isHeaderWithId "my-section")) (env {saunfDoc = doc})
+      let sections = runReader (filterSections (hasId "my-section")) (env {saunfDoc = doc})
 
       sections `shouldBe` []
 
@@ -28,7 +28,7 @@ spec = do
           \:END:\n\
           \First section text\n\
           \* Second Section"
-      let sections = runReader (filterSections (isHeaderWithId "my-section")) (env {saunfDoc = doc})
+      let sections = runReader (filterSections (hasId "my-section")) (env {saunfDoc = doc})
 
       (Pandoc _ expectedSection) <-
         readOrg'
@@ -54,7 +54,7 @@ spec = do
           \:PROPERTIES:\n\
           \:CUSTOM_ID: my-section\n\
           \:END:\n"
-      let section = runReader (filterSections (isHeaderWithId "my-section")) (env {saunfDoc = doc})
+      let section = runReader (filterSections (hasId "my-section")) (env {saunfDoc = doc})
 
       (Pandoc _ expectedSection1) <-
         readOrg'

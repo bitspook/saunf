@@ -47,7 +47,7 @@ explodeMaybe a =
   case a of
     (Header lvl _ xs) -> do
       let grabSection id = do
-            sections <- filterSections (isHeaderWithId id)
+            sections <- filterSections (hasId id)
             case sections of
               [] -> return $ Section P.Null []
               (s : _) -> return s

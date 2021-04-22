@@ -12,8 +12,8 @@ import Saunf.Types
 import qualified Text.Pandoc as P hiding (Reader)
 import qualified Text.Pandoc.Shared as P
 
-isHeaderWithId :: Text -> P.Block -> Bool
-isHeaderWithId cid b = case b of
+hasId :: Text -> P.Block -> Bool
+hasId cid b = case b of
   (P.Header _ (cid', _, _) _) -> cid' == cid
   _ -> False
 
