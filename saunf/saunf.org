@@ -142,6 +142,18 @@ At its bare minimum, Saunf should
   - [ ] Pull changed issues from github
   - [ ] Enrich github issues with glossary terms
 
+* Bugs                                                                  :bug:
+:PROPERTIES:
+:CATEGORY: issues
+:END:
+** TODO =readme push= don't export tables
+
+Tables in saunf-doc gets exported as =[TABLE]= in readme.md. Pandoc itself is
+able to export org tables, but saunf for some reason is behaving like this.
+** TODO =gh-issues push= consider "DONE" issues as new
+
+Concerned function: =filterNewIssues= at saunf/src/Saunf/Issue.hs:94
+
 * Epics
 
 ** Readme
@@ -174,17 +186,11 @@ in saunf-doc
 *** TODO Creating an issue should update tags as github labels
 *** TODO User should be able to pull new issues from github issues
 *** TODO User should be able to pull changes to existing issues from github issues
-* Bugs                                                                  :bug:
-:PROPERTIES:
-:CATEGORY: issues
-:END:
-** TODO =readme push= don't export tables
+*** TODO Create subtasks as separate issues in github, and replace in parent issues as links
 
-Tables in saunf-doc gets exported as =[TABLE]= in readme.md. Pandoc itself is
-able to export org tables, but saunf for some reason is behaving like this.
-** TODO =gh-issues push= consider "DONE" issues as new
-
-Concerned function: =filterNewIssues= at saunf/src/Saunf/Issue.hs:94
+When an issue in saunf-doc has any more TODO items, create them as separate
+issues in github. In the parent issue, instead of writing the whole subtree,
+write a link to the subtask instead.
 
 * Tasks
 :PROPERTIES:
@@ -214,7 +220,58 @@ Lint:
 ** TODO Use cabal mixins technique to use Relude as default prelude  :chore:
 - Remove the =NoImplicitPrelude= language pragmas
 ** TODO Add ability to configure todo statuses in saunf-conf   :enhancement:
-** TODO If a section don't have any todo status, don't add =(todo,"")= tuple to sterileSectionHeader's metadata :tech:debt:
+** TODO Make pandoc write org-mode without loss [2/5]
+
+Pandoc treats converting documents as org-mode's exporting. This make it lose
+information when a document is read and written back. Saunf can't afford that
+since it works on a document instead of exporting it.
+
+Here is a growing list of behavior where Pandoc loses/changes meaning in an
+org-mode document:
+
+*** DONE Unrecognized options in org preface aren't written back in org-mode meta
+CLOSED: [2021-04-23 Fri 22:11]
+
+Pandoc adds them in document body as RawBlocks.
+
+*** DONE Pandoc don't write preface back in org-mode
+CLOSED: [2021-04-23 Fri 22:11]
+
+Some of the preface data, e.g title is present in Pandoc Meta though.
+
+*** TODO Links to targets get written back with a =#= prefix.
+
+If we have a target =<<target>>=, and a link =[[target]]=, Pandoc writes it back
+as =[[target][#target]]=, which breaks the link in org-mode. Org-mode tries to
+link =#=-prefixed links to CUSTOM_IDs.
+
+*** TODO Links to targets are case-sensitive
+
+If we have a target =<<Target>>=, and a link as =[[target]]=, Pandoc considers
+it a broken link and write the link back as =/target/= (i.e italicized
+plain-text).
+
+*** TODO Export options in org-preface are lost when a =Pandoc= is created
+
+Export options, e.g =#+OPTIONS: H:9= are not present even in AST produced by
+Pandoc.
+
+* Ideas
+** Task oriented development
+- Add commands which allow switching to tasks in Saunf
+  On switching a task, do a bunch of things like
+  - Switch to a different git branch. Maybe somehow make guesses on whether it's
+    going to be a feature/bugfix/hotfix branch, and based on that decide from
+    where to start this branch (e.g develop or master)
+- Allow adding a list of "relevant files" with a task
+  - Automatically open these files in the editor when the task is switched
+  - Automatically add files to this list as the task branch is changed
+** Magit like Emacs interface for Saunf
+A =saunf status= command which tells information about which changes have been
+made, which task the user is working on (if we do TOD) etc.
+
+We'll probably need to maintain a local state for this (which isn't saunf doc),
+not sure if it is worth it. I wonder if we can get away with using git instead.
 * Glossary
 :PROPERTIES:
 :CUSTOM_ID: glossary
