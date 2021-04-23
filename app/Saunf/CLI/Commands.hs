@@ -29,18 +29,24 @@ init :: IO ()
 init = do
   let confFileName = "./saunf.dhall"
   let defaultTemplate =
-        "\
-        \let Github = { repo : Text, user : Text, token : Text }\n\
-        \\n\
-        \in  { readmePath = \"./readme.md\"\n\
-        \    , saunfDocPath = \"./saunf/saunf.org\"\n\
-        \    , github = None Github\n\
-        \    , readmeTemplate = Some\n\
-        \        ''\n\
-        \        # $title$\n\
-        \        $description$\n\
-        \        ''\n\
-        \    }"
+        unlines
+          [ "let VerbosityLevel = < Error | Warning | Info | Debug >",
+            "let Github = { repo : Text, user : Text, token : Text }",
+            "let readmePath = \"./readme.md\"",
+            "let saunfDocPath = \"./saunf.org\"",
+            "let verbosity = VerbosityLevel.Debug",
+            "",
+            "in  { readmePath",
+            "    , saunfDocPath",
+            "    , github = None Github",
+            "    , readmeTemplate = Some",
+            "        ''",
+            "        # $title$",
+            "        $description$",
+            "        ''",
+            "    , verbosity",
+            "    }"
+          ]
 
   hasExistingSaunfConf <- doesFileExist confFileName
   when
