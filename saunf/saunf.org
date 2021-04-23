@@ -242,7 +242,7 @@ Some of the preface data, e.g title is present in Pandoc Meta though.
 *** TODO Links to targets get written back with a =#= prefix.
 
 If we have a target =<<target>>=, and a link =[[target]]=, Pandoc writes it back
-as =[[target][#target]]=, which breaks the link in org-mode. Org-mode tries to
+as =[[#target][target]]=, which breaks the link in org-mode. Org-mode tries to
 link =#=-prefixed links to CUSTOM_IDs.
 
 *** TODO Links to targets are case-sensitive
