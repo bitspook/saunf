@@ -1,0 +1,3 @@
+packages:
+  ./org-mode/*.cabal
+  ./saunf/*.cabal

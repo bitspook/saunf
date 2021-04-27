@@ -6,8 +6,7 @@
 module Saunf.Conf where
 
 import GitHub.Data
-import Data.Text (Text)
-import Dhall (FromDhall, Generic)
+import Dhall (FromDhall)
 
 data GithubConf = GithubConf
   { user :: Name Owner,

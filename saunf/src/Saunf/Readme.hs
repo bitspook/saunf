@@ -13,7 +13,6 @@ module Saunf.Readme
 where
 
 import Colog (Message, WithLog, log, pattern D, pattern E)
-import Data.Aeson
 import Relude hiding ((<|>))
 import Saunf.Conf
 import Saunf.Shared

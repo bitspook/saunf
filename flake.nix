@@ -13,12 +13,21 @@
       overlay = self: super: {
         haskellPackages = super.haskellPackages.override {
           overrides = hself: hsuper: {
+            org-mode =
+              hself.callCabal2nix
+                "org-mode"
+                (self.nix-gitignore.gitignoreSourcePure
+                  [ ./.gitignore "flake.nix" ]
+                  ./org-mode
+                )
+                { };
+
             saunf =
               hself.callCabal2nix
                 "saunf"
                 (self.nix-gitignore.gitignoreSourcePure
                   [ ./.gitignore "flake.nix" ]
-                  ./.
+                  ./saunf
                 )
                 { };
           };

@@ -1,0 +1,105 @@
+#+TITLE: The Test File
+#+DATE: 2020-02-17
+#+AUTHOR: Colin
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="../assets/org-theme.css"/>
+
+Some text before the initial heading.
+
+* A Heading                                                            :tag1:
+
+** A subheading                                                        :tag2:
+
+*** We have to go deeper                                               :tag3:
+
+*This is some bold text* within a normal paragraph. However I should tell you
+that the paragraph doesn't end there. It has multiple lines! Oh, but having only
+one would be lonely...
+
+So we'll make /a second one/. How about some code?
+
+#+begin_src haskell
+  -- | Very complicated.
+  main :: IO ()
+  main = putStrLn "org-mode tests"
+#+end_src
+
+** More                                                                :tag2:
+
+And a quote.
+
+#+begin_quote
+Always keep some cash on hand, you never know.
+
+- Albert Einstein
+#+end_quote
+
+** DONE Gotta do it
+   CLOSED: [2021-04-25 Sun 19:39] DEADLINE: <2021-04-25 Sun>
+
+Stuff.
+
+** Props
+   :PROPERTIES:
+   :Yes: Fun
+   :END:
+
+* Another Heading!
+
+[[https://www.fosskers.ca/][Check out my website.]] It has a blog with ~code~ samples.
+
+* Heading with /markup/
+
+さぁ日本語も入れたらどうなる？
+
+* A simple list
+
+Things to do:
+
+- Pet the cat
+- Feed the cat
+- [[https://www.youtube.com/][Watch cat videos]]
+  - Go to site
+  - Click on video
+    - Make sure to click really hard
+  - Watch video
+- Water the cat
+
+* List with Parens
+
+This is a paragraph (or is it?). There's only one way to know.
+I think (*we should* be bold *about*) our decisions.
+
+- Here is an item
+- This (is an item too).
+- This (is an item)
+- This (*A* is)
+- This (*A* is) a cat
+- This (*A* yes *B*), why?
+
+* List from About page
+
+- The [[https://github.com/fosskers/aura][Aura Package Manager]] for Arch Linux
+- The [[https://github.com/kadena-io/chainweb-node][Kadena Public Blockchain]] (core developer)
+- [[https://github.com/fosskers/mapalgebra][MapAlgebra]]  - An implementation of /GIS and Cartographic Modelling/ by Dana Tomlin
+- Mapbox VectorTile codecs ([[https://github.com/fosskers/vectortiles][Haskell]], [[https://github.com/locationtech/geotrellis/tree/master/vectortile][Scala]])
+- [[https://github.com/fosskers/scalaz-and-cats][ScalaZ and Cats Comparison]] and the [[https://github.com/fosskers/scala-benchmarks][Scala Collections Benchmarks]]
+
+* Some Tables
+
+| A | B | C |
+|---+---+---|
+| D | E | F |
+
+| *A* Yes |           | /B/ No ~C~ |
+|---------+-----------+------------|
+|         |           |            |
+|---------+-----------+------------|
+|         | [[./img.png]] |            |
+
+* Parens
+
+() (Stuff in parens.) (/Markup/).
+
+* The End
+
+Farewell.
