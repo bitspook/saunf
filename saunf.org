@@ -1,33 +1,39 @@
+:PROPERTIES:
+:ID:       db01d149-8e60-4635-ad88-447b8c33265e
+:END:
 #+title: Saunf
 
-Saunf is a plain text software project management tool.
+Saunf is an insolent project management software with a simple goal
 
-Not everyone is a plain-text fan, so to enable collaboration, saunf can
-integrate with different tools. Or it is supposed to.
+#+begin_quote
+Saunf should allow me to do my project management the way I like, with an
+org-mode file in cozy cuddle of Emacs, without letting graybeardlessness of my
+teammates holding me back
+#+end_quote
 
 I am building Saunf to simplify managing software projects for me, while
 allowing people I work with to use the tools they like. At its infancy, Saunf
 should enable my current workflow of managing a project from a single [[https://orgmode.org/][org]] file:
 
 - I write a lot of introductory documentation. Saunf should allow me to pick
-  parts from this document and build a readme file that don't bore people to
-  death
+  parts from this document and build a readme file that isn't a (too big) scary
+  wall of text
 - I keep a list of todo items within the [[saunf-doc]]. Saunf should allow me to
   sync these with Github issues.
-- I maintain a glossary for every project to establish a ubiquitous language.
-  Saunf should enable me to utilize this glossary to more effectively achieve my
-  goal of establishing a ubiquitous language.
+- I maintain a glossary for every project. Saunf should enable me to utilize
+  this glossary to more effectively achieve my goal of establishing a ubiquitous
+  language.
 
-I have a lot of (rough) fantasies of expanding the scope to replace Jira, and a
-lot more than that. I imagine a tool which can allow me to see a project from
-bird's eye view as architecture diagrams, to which I can then zoom into get more
-detail, zooming in further and further to end up reading source code. A tool
-which would allow me to trace every single line of code, every domain object to
-the requirements that demanded its existence. Projects where things are
-connected with minimum effort.
+I have a lot of (rough) fantasies of expanding the scope to replace Jira and
+more. I imagine a tool which can allow me to see a project from bird's eye view
+as architecture diagrams, to which I can then zoom into get more detail, zooming
+in further and further to end up reading source code. A tool which would allow
+me to trace every single line of code, every domain object to the requirements
+that demanded its existence. Projects where things are connected with minimum
+effort.
 
 For starters, let's try to bring together the information that usually spreads
-over a gazillion tools with no convergence point.
+over several tools with no convergence point.
 
 * Documentation
 
@@ -39,9 +45,8 @@ over a gazillion tools with no convergence point.
 Saunf is in its infancy, so things are likely to change wildly. For now, this
 how you use saunf:
 
-1. Create =saunf/saunf.org= in root of your project. This file is referred to as
-   =saunf-doc=
-2. Describe your project using org-mode markup in saunf-doc
+1. Create a =saunf.dhall= in root of your project to configure saunf
+2. Describe your project using org-mode markup in [[saunf-doc]]
 
 *** CLI
 
