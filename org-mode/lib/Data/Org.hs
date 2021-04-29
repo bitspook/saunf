@@ -2,7 +2,6 @@
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 -- |
 -- Module    : Data.Org
@@ -16,13 +15,24 @@
 
 module Data.Org
   ( -- * Types
+    -- ** Top-level
     OrgFile(..)
   , emptyOrgFile
   , OrgDoc(..)
   , emptyDoc
   , allDocTags
+    -- ** Timestamps
+  , OrgDateTime(..)
+  , OrgTime(..)
+  , Repeater(..)
+  , TimeDirection(..)
+  , Interval(..)
+    -- ** Markup
   , Section(..)
+  , titled
   , allSectionTags
+  , Todo(..)
+  , Priority(..)
   , Block(..)
   , Words(..)
   , ListItems(..)
@@ -45,6 +55,10 @@ module Data.Org
   , table
   , list
   , line
+  , timestamp
+  , date
+  , timeRange
+  , repeater
     -- * Pretty Printing
   , prettyOrgFile
   , prettyOrg
@@ -55,6 +69,7 @@ import           Control.Applicative.Combinators.NonEmpty
 import           Control.Monad (void, when)
 import           Data.Bool (bool)
 import           Data.Functor (($>))
+import           Data.Hashable (Hashable)
 import           Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NEL
 import qualified Data.Map.Strict as M
@@ -63,12 +78,16 @@ import           Data.Semigroup (sconcat)
 import qualified Data.Set as S
 import           Data.Text (Text)
 import qualified Data.Text as T
+import           Data.Time (Day, TimeOfDay(..), fromGregorian, showGregorian)
+import           Data.Time.Calendar (DayOfWeek(..))
 import           Data.Void (Void)
 import           GHC.Generics (Generic)
 import           System.FilePath (takeExtension)
 import           Text.Megaparsec hiding (sepBy1, sepEndBy1, some, someTill)
 import           Text.Megaparsec.Char
+import           Text.Megaparsec.Char.Lexer (decimal)
 import qualified Text.Megaparsec.Char.Lexer as L
+import           Text.Printf (printf)
 
 --------------------------------------------------------------------------------
 -- Types
@@ -84,7 +103,7 @@ data OrgFile = OrgFile
   -- #+AUTHOR: Colin
   -- @
   , orgDoc  :: OrgDoc }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
 
 emptyOrgFile :: OrgFile
 emptyOrgFile = OrgFile mempty emptyDoc
@@ -102,7 +121,7 @@ emptyOrgFile = OrgFile mempty emptyDoc
 data OrgDoc = OrgDoc
   { docBlocks   :: [Block]
   , docSections :: [Section] }
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
 
 emptyDoc :: OrgDoc
 emptyDoc = OrgDoc [] []
@@ -125,7 +144,77 @@ data Block
   | List ListItems
   | Table (NonEmpty Row)
   | Paragraph (NonEmpty Words)
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
+
+-- | An org-mode timestamp. Must contain at least a year-month-day and the day
+-- of the week:
+--
+-- @
+-- \<2021-04-27 Tue\>
+-- @
+--
+-- but also may contain a time:
+--
+-- @
+-- \<2021-04-27 Tue 12:00\>
+-- @
+--
+-- or a time range:
+--
+-- @
+-- \<2021-04-27 Tue 12:00-13:00\>
+-- @
+--
+-- and/or a repeater value:
+--
+-- @
+-- \<2021-04-27 Tue +1w\>
+-- @
+data OrgDateTime = OrgDateTime
+  { dateDay       :: Day
+  , dateDayOfWeek :: DayOfWeek
+  , dateTime      :: Maybe OrgTime
+  , dateRepeat    :: Maybe Repeater }
+  deriving stock (Eq, Show)
+
+-- | A lack of a specific `OrgTime` is assumed to mean @00:00@, the earliest
+-- possible time for that day.
+instance Ord OrgDateTime where
+  compare (OrgDateTime d0 _ mt0 _) (OrgDateTime d1 _ mt1 _) = case compare d0 d1 of
+    LT -> LT
+    GT -> GT
+    EQ -> case (mt0, mt1) of
+      (Nothing, Nothing) -> EQ
+      (Just _, Nothing)  -> GT
+      (Nothing, Just _)  -> LT
+      (Just t0, Just t1) -> compare t0 t1
+
+-- | The time portion of the full timestamp. May be a range, as seen in the
+-- following full timestamp:
+--
+-- @
+-- \<2021-04-27 Tue 12:00-13:00\>
+-- @
+data OrgTime = OrgTime
+  { timeStart :: TimeOfDay
+  , timeEnd   :: Maybe TimeOfDay }
+  deriving stock (Eq, Ord, Show)
+
+-- | An indication of how often a timestamp should be automatically reapplied in
+-- the Org Agenda.
+data Repeater = Repeater
+  { repDirection :: TimeDirection
+  , repValue     :: Word
+  , repInterval  :: Interval }
+  deriving stock (Eq, Ord, Show)
+
+-- | Is the `Repeater` value an offset into the past or future?
+data TimeDirection = Past | Future
+  deriving stock (Eq, Ord, Show)
+
+-- | The timestamp repitition unit.
+data Interval = Day | Week | Month | Year
+  deriving stock (Eq, Ord, Show)
 
 -- | A subsection, marked by a heading line and followed recursively by an
 -- `OrgDoc`.
@@ -136,17 +225,33 @@ data Block
 -- This is content in the sub ~OrgDoc~.
 -- @
 data Section = Section
-  { sectionHeading  :: NonEmpty Words
-  , sectionTags     :: [Text]
-  , sectionClosed   :: Maybe Text  -- TODO Use a time type.
-  , sectionDeadline :: Maybe Text -- TODO Here too.
-  , sectionProps    :: M.Map Text Text
-  , sectionDoc      :: OrgDoc }
-  deriving stock (Eq, Show, Generic)
+  { sectionTodo      :: Maybe Todo
+  , sectionPriority  :: Maybe Priority
+  , sectionHeading   :: NonEmpty Words
+  , sectionTags      :: [Text]
+  , sectionClosed    :: Maybe OrgDateTime
+  , sectionDeadline  :: Maybe OrgDateTime
+  , sectionScheduled :: Maybe OrgDateTime
+  , sectionTimestamp :: Maybe OrgDateTime
+    -- ^ A timestamp for general events that are neither a DEADLINE nor SCHEDULED.
+  , sectionProps     :: M.Map Text Text
+  , sectionDoc       :: OrgDoc }
+  deriving stock (Eq, Ord, Show, Generic)
+
+-- | A mostly empty invoking of a `Section`.
+titled :: Words -> Section
+titled ws = Section Nothing Nothing (ws:|[]) [] Nothing Nothing Nothing Nothing mempty emptyDoc
 
 -- | All unique tags with a section and its subsections.
 allSectionTags :: Section -> S.Set Text
-allSectionTags (Section _ sts _ _ _ doc) = S.fromList sts <> allDocTags doc
+allSectionTags (Section _ _ _ sts _ _ _ _ _ doc) = S.fromList sts <> allDocTags doc
+
+-- | The completion state of a heading that is considered a "todo" item.
+data Todo = TODO | DONE
+  deriving stock (Eq, Ord, Show, Generic)
+
+newtype Priority = Priority { priority :: Text }
+  deriving stock (Eq, Ord, Show, Generic)
 
 -- | An org list constructed of @-@ characters.
 --
@@ -160,11 +265,11 @@ allSectionTags (Section _ sts _ _ _ doc) = S.fromList sts <> allDocTags doc
 -- - Feed the elephant
 -- @
 newtype ListItems = ListItems (NonEmpty Item)
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
 
 -- | A line in a bullet-list. Can contain sublists, as shown in `ListItems`.
 data Item = Item (NonEmpty Words) (Maybe ListItems)
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
 
 -- | A row in an org table. Can have content or be a horizontal rule.
 --
@@ -174,11 +279,11 @@ data Item = Item (NonEmpty Words) (Maybe ListItems)
 -- | D | E | F |
 -- @
 data Row = Break | Row (NonEmpty Column)
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
 
 -- | A possibly empty column in an org table.
 data Column = Empty | Column (NonEmpty Words)
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
 
 -- | The fundamental unit of Org text content. `Plain` units are split
 -- word-by-word.
@@ -193,15 +298,17 @@ data Words
   | Image URL
   | Punct Char
   | Plain Text
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (Hashable)
 
 -- | The url portion of a link.
 newtype URL = URL Text
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (Hashable)
 
 -- | The programming language some source code block was written in.
 newtype Language = Language Text
-  deriving stock (Eq, Show, Generic)
+  deriving stock (Eq, Ord, Show, Generic)
 
 --------------------------------------------------------------------------------
 -- Parser
@@ -244,59 +351,99 @@ orgP' depth = L.lexeme space $ OrgDoc
       , paragraph ]  -- TODO Paragraph needs to fail if it detects a heading.
 
 -- | If a line starts with @*@ and a space, it is a `Section` heading.
-heading :: Parser (T.Text, NonEmpty Words, [Text])
+heading :: Parser (T.Text, Maybe Todo, Maybe Priority, NonEmpty Words, [Text])
 heading = do
   stars <- someOf '*' <* char ' '
-  (ws, mts) <- headerLine
+  (mtd, mpr, ws, mts) <- headerLine
   case mts of
-    Nothing -> pure (stars, ws, [])
-    Just ts -> pure (stars, ws, NEL.toList ts)
+    Nothing -> pure (stars, mtd, mpr, ws, [])
+    Just ts -> pure (stars, mtd, mpr, ws, NEL.toList ts)
 
 section :: Int -> Parser Section
 section depth = L.lexeme space $ do
-  (stars, ws, ts) <- heading
+  (stars, td, pr, ws, ts) <- heading
   -- Fail if we've found a parent heading --
   when (T.length stars < depth) $ failure Nothing mempty
   -- Otherwise continue --
-  (cl, dl) <- fromMaybe (Nothing, Nothing) <$> optional (try timestamps)
-  props <- fromMaybe mempty <$> optional (try properties)
+  (cl, dl, sc) <- fromMaybe (Nothing, Nothing, Nothing) <$> optional (try $ newline *> hspace *> timestamps)
+  tm <- optional (try $ newline *> hspace *> stamp)
+  props <- fromMaybe mempty <$> optional (try $ newline *> hspace *> properties)
   void space
-  Section ws ts cl dl props <$> orgP' (succ depth)
+  Section td pr ws ts cl dl sc tm props <$> orgP' (succ depth)
 
-timestamps :: Parser (Maybe Text, Maybe Text)
+timestamps :: Parser (Maybe OrgDateTime, Maybe OrgDateTime, Maybe OrgDateTime)
 timestamps = do
-  void newline
-  void hspace
   mc <- optional closed
   void hspace
   md <- optional deadline
-  case (mc, md) of
-    (Nothing, Nothing) -> failure Nothing mempty
-    _                  -> pure (mc, md)
+  void hspace
+  ms <- optional scheduled
+  case (mc, md, ms) of
+    (Nothing, Nothing, Nothing) -> failure Nothing mempty
+    _                           -> pure (mc, md, ms)
 
-closed :: Parser Text
-closed = do
-  void $ string "CLOSED: "
-  between (char '[') (char ']') (someTill' ']')  -- TODO What if newline?
+-- | An active timestamp.
+stamp :: Parser OrgDateTime
+stamp = between (char '<') (char '>') timestamp
 
-deadline :: Parser Text
-deadline = do
-  void $ string "DEADLINE: "
-  between (char '<') (char '>') (someTill' '>')  -- TODO What if newline?
+closed :: Parser OrgDateTime
+closed = string "CLOSED: " *> between (char '[') (char ']') timestamp
+
+deadline :: Parser OrgDateTime
+deadline = string "DEADLINE: " *> stamp
+
+scheduled :: Parser OrgDateTime
+scheduled = string "SCHEDULED: " *> stamp
+
+timestamp :: Parser OrgDateTime
+timestamp = OrgDateTime
+  <$> date
+  <*> (hspace1 *> dow)
+  <*> optional (try $ hspace1 *> timeRange)
+  <*> optional (hspace1 *> repeater)
+
+date :: Parser Day
+date = fromGregorian <$> decimal <*> (char '-' *> decimal) <*> (char '-' *> decimal)
+
+dow :: Parser DayOfWeek
+dow = choice
+  [ Monday    <$ string "Mon"
+  , Tuesday   <$ string "Tue"
+  , Wednesday <$ string "Wed"
+  , Thursday  <$ string "Thu"
+  , Friday    <$ string "Fri"
+  , Saturday  <$ string "Sat"
+  , Sunday    <$ string "Sun" ]
+
+timeRange :: Parser OrgTime
+timeRange = OrgTime <$> t <*> optional (char '-' *> t)
+  where
+    t :: Parser TimeOfDay
+    t = do
+      h <- decimal
+      void $ char ':'
+      m <- decimal
+      s <- optional $ do
+        void $ char ':'
+        decimal
+      pure $ TimeOfDay h m (fromMaybe 0 s)
+
+repeater :: Parser Repeater
+repeater = Repeater
+  <$> choice [ char '-' $> Past, char '+' $> Future ]
+  <*> decimal
+  <*> choice [ char 'd' $> Day, char 'w' $> Week, char 'm' $> Month, char 'y' $> Year ]
 
 properties :: Parser (M.Map Text Text)
 properties = do
-  void newline
-  void hspace
   void $ string ":PROPERTIES:"
   void newline
   void hspace
-  ps <- (property <* newline <* hspace) `manyTill` string ":END:"
+  ps <- (hspace *> property <* newline <* hspace) `manyTill` string ":END:"
   pure $ M.fromList ps
 
 property :: Parser (Text, Text)
 property = do
-  void hspace
   void $ char ':'
   key <- someTill' ':' -- TODO Newlines?
   void $ char ':'
@@ -387,11 +534,15 @@ paragraph = L.lexeme space $ do
   notFollowedBy heading
   Paragraph . sconcat <$> sepEndBy1 (line '\n') newline
 
-headerLine :: Parser (NonEmpty Words, Maybe (NonEmpty Text))
+headerLine :: Parser (Maybe Todo, Maybe Priority, NonEmpty Words, Maybe (NonEmpty Text))
 headerLine = do
-  ws <- (wordChunk '\n' <* hspace) `someTill` lookAhead (void tags <|> void (char '\n') <|> eof)
+  td <- optional . try $ (string "TODO" $> TODO) <|> (string "DONE" $> DONE)
+  void hspace
+  pr <- optional . try . fmap Priority $ between (char '[') (char ']') (char '#' *> someTill' ']')
+  void hspace
+  ws <- (wordChunk '\n' <* hspace) `someTill` lookAhead (try $ void tags <|> void (char '\n') <|> eof)
   ts <- optional tags
-  pure (ws, ts)
+  pure (td, pr, ws, ts)
 
 line :: Char -> Parser (NonEmpty Words)
 line end = wordChunk end `sepEndBy1` manyOf ' '
@@ -477,38 +628,47 @@ prettyOrg' depth (OrgDoc bs ss) =
   T.intercalate "\n\n" $ map prettyBlock bs <> map (prettySection depth) ss
 
 prettySection :: Int -> Section -> Text
-prettySection depth (Section ws ts cl dl ps od) =
-  T.intercalate "\n" $ catMaybes [Just headig, time, props, Just subdoc]
+prettySection depth (Section td pr ws ts cl dl sc tm ps od) =
+  T.intercalate "\n" $ catMaybes
+  [ Just headig
+  , stamps
+  , time <$> tm
+  , props
+  , Just subdoc ]
   where
+    pr' :: Priority -> Text
+    pr' (Priority t) = "[#" <> t <> "]"
+
     -- TODO There is likely a punctuation bug here.
     --
     -- Sun Apr 25 09:59:01 AM PDT 2021: I wish you had elaborated.
     headig = T.unwords
       $ T.replicate depth "*"
-      : NEL.toList (NEL.map prettyWords ws)
+      : catMaybes [ T.pack . show <$> td, pr' <$> pr ]
+      <> NEL.toList (NEL.map prettyWords ws)
       <> bool [":" <> T.intercalate ":" ts <> ":"] [] (null ts)
 
     indent :: Text
     indent = T.replicate (depth + 1) " "
 
-    -- | Timestamps can appear in one of four configurations:
-    --
-    -- 1. None.
-    -- 2. Just a "CLOSED" if it were from a TODO without a deadline.
-    -- 3. Just a "DEADLINE" if it is yet to be complete.
-    -- 4. "CLOSED" first then "DEADLINE" if it were an assigned, completed task.
-    time :: Maybe Text
-    time = case (cl, dl) of
-      (Nothing, Nothing) -> Nothing
-      (Just x, Nothing)  -> Just $ indent <> cl' x
-      (Nothing, Just y)  -> Just $ indent <> dl' y
-      (Just x, Just y)   -> Just $ indent <> cl' x <> " " <> dl' y
+    -- | The order of "special" timestamps is CLOSED, DEADLINE, then SCHEDULED.
+    -- Any permutation of these may appear.
+    stamps :: Maybe Text
+    stamps = case catMaybes [fmap cl' cl, fmap dl' dl, fmap sc' sc] of
+      [] -> Nothing
+      xs -> Just $ indent <> T.unwords xs
 
-    cl' :: Text -> Text
-    cl' x = "CLOSED: [" <> x <> "]"
+    cl' :: OrgDateTime -> Text
+    cl' x = "CLOSED: [" <> prettyDateTime x <> "]"
 
-    dl' :: Text -> Text
-    dl' x = "DEADLINE: <" <> x <> ">"
+    dl' :: OrgDateTime -> Text
+    dl' x = "DEADLINE: <" <> prettyDateTime x <> ">"
+
+    sc' :: OrgDateTime -> Text
+    sc' x = "SCHEDULED: " <> time x
+
+    time :: OrgDateTime -> Text
+    time x = "<" <> prettyDateTime x <> ">"
 
     props :: Maybe Text
     props
@@ -520,6 +680,37 @@ prettySection depth (Section ws ts cl dl ps od) =
 
     subdoc :: Text
     subdoc = prettyOrg' (succ depth) od
+
+prettyDateTime :: OrgDateTime -> Text
+prettyDateTime (OrgDateTime d w t r) =
+  T.unwords $ catMaybes [ Just d', Just w', fmap prettyTime t, fmap prettyRepeat r ]
+  where
+    d' :: Text
+    d' = T.pack $ showGregorian d
+
+    w' :: Text
+    w' = T.pack . take 3 $ show w
+
+prettyTime :: OrgTime -> Text
+prettyTime (OrgTime s me) = tod s <> maybe "" (\e -> "-" <> tod e) me
+  where
+    tod :: TimeOfDay -> Text
+    tod (TimeOfDay h m _) = T.pack $ printf "%02d:%02d" h m
+
+prettyRepeat :: Repeater -> Text
+prettyRepeat (Repeater d v i) = d' <> T.pack (show v) <> i'
+  where
+    d' :: Text
+    d' = case d of
+      Past   -> "-"
+      Future -> "+"
+
+    i' :: Text
+    i' = case i of
+      Day   -> "d"
+      Week  -> "w"
+      Month -> "m"
+      Year  -> "y"
 
 prettyBlock :: Block -> Text
 prettyBlock o = case o of

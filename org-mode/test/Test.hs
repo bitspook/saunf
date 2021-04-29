@@ -7,6 +7,8 @@ import           Data.Org
 import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import           Data.Time.Calendar (DayOfWeek(..), fromGregorian)
+import           Data.Time.LocalTime (TimeOfDay(..))
 import           Data.Void (Void)
 import           Test.Tasty
 import           Test.Tasty.HUnit
@@ -27,59 +29,128 @@ main = do
 suite :: T.Text -> T.Text -> TestTree
 suite simple full = testGroup "Unit Tests"
   [ testGroup "Basic Markup"
-    [ testCase "Header" $ parseMaybe (section 1) "* A"
-      @?= Just (Section [Plain "A"] [] Nothing Nothing mempty emptyDoc)
+    [ testCase "Header" $ parseMaybe (section 1) "* A" @?= Just (titled (Plain "A"))
     , testCase "Header - Subsection" $ parseMaybe (section 1) "* A\n** B"
-      @?= Just (Section [Plain "A"] [] Nothing Nothing mempty (OrgDoc [] [Section [Plain "B"] [] Nothing Nothing mempty emptyDoc]))
+      @?= Just ((titled (Plain "A")) { sectionDoc = OrgDoc [] [titled (Plain "B")] })
+
     , testCase "Header - Back again"
       $ testPretty orgP "Header" "* A\n** B\n* C"
-      $ OrgDoc [] [ Section [Plain "A"] [] Nothing Nothing mempty (OrgDoc [] [Section [Plain "B"] [] Nothing Nothing mempty emptyDoc])
-                  , Section [Plain "C"] [] Nothing Nothing mempty emptyDoc ]
+      $ OrgDoc [] [ (titled (Plain "A")) { sectionDoc = OrgDoc [] [titled (Plain "B")] }, titled (Plain "C") ]
+
     , testCase "Header - Contents"
       $ testPretty orgP "Header" "* A\nD\n\n** B\n* C"  -- TODO Requires an extra newline!
       $ OrgDoc []
-      [ Section [Plain "A"] [] Nothing Nothing mempty (OrgDoc [Paragraph [Plain "D"]] [Section [Plain "B"] [] Nothing Nothing mempty emptyDoc])
-      , Section [Plain "C"] [] Nothing Nothing mempty emptyDoc ]
+      [ (titled (Plain "A")) { sectionDoc = OrgDoc [Paragraph [Plain "D"]] [ titled (Plain "B") ] }
+      , titled (Plain "C") ]
+
+    , testCase "Header - TODO"
+      $ testPretty orgP "Header" "* TODO A"
+      $ OrgDoc []
+      [ (titled (Plain "A")) { sectionTodo = Just TODO }]
+
+    , testCase "Header - Priority"
+      $ testPretty orgP "Header" "* [#A] A"
+      $ OrgDoc []
+      [ (titled (Plain "A")) { sectionPriority = Just $ Priority "A" }]
+
+    , testCase "Header - TODO + Priority"
+      $ testPretty orgP "Header" "* TODO [#A] A"
+      $ OrgDoc []
+      [ (titled (Plain "A")) { sectionTodo = Just TODO, sectionPriority = Just $ Priority "A" }]
+
     , testCase "Header - One line, single tag"
       $ testPretty orgP "Header" "* A  :this:"
-      $ OrgDoc [] [Section [Plain "A"] ["this"] Nothing Nothing mempty emptyDoc]
+      $ OrgDoc [] [ (titled (Plain "A")) { sectionTags = ["this"] } ]
+
     , testCase "Header - One line, multiple tags"
       $ testPretty orgP "Header" "* A  :this:that:"
-      $ OrgDoc [] [Section [Plain "A"] ["this", "that"] Nothing Nothing mempty emptyDoc]
+      $ OrgDoc [] [ (titled (Plain "A")) { sectionTags = ["this", "that"] } ]
+
     , testCase "Header - More Tags"
       $ testPretty orgP "Header" "* A  :this:that:\n** B   :other:\n* C"
       $ OrgDoc []
-      [ Section [Plain "A"] ["this", "that"] Nothing Nothing mempty (OrgDoc [] [Section [Plain "B"] ["other"] Nothing Nothing mempty emptyDoc])
-      , Section [Plain "C"] [] Nothing Nothing mempty emptyDoc
-      ]
+      [ (titled (Plain "A"))
+        { sectionTags = ["this", "that"]
+        , sectionDoc = OrgDoc [] [ (titled (Plain "B")) { sectionTags = ["other"] } ] }
+      , titled (Plain "C") ]
+
+    , testCase "Header - Non-tag Smiley"
+      $ testPretty orgP "Header" "* A :)"
+      $ OrgDoc [] [ Section Nothing Nothing [Plain "A", Punct ':', Punct ')'] [] Nothing Nothing Nothing Nothing mempty emptyDoc ]
+
+    , testCase "Header - Vanilla Timestamp"
+      $ testPretty orgP "Header" "* A\n  <2021-04-19 Mon>"
+      $ let tm = OrgDateTime { dateDay = fromGregorian 2021 4 19
+                             , dateDayOfWeek = Monday
+                             , dateTime = Nothing
+                             , dateRepeat = Nothing }
+        in OrgDoc [] [ (titled (Plain "A")) { sectionTimestamp = Just tm } ]
+
     , testCase "Header - CLOSED"
       $ testPretty orgP "Header" "* A\n  CLOSED: [2021-04-19 Mon 15:43]"
-      $ OrgDoc [] [ Section [Plain "A"] [] (Just "2021-04-19 Mon 15:43") Nothing mempty emptyDoc ]
+      $ let cl = OrgDateTime { dateDay = fromGregorian 2021 4 19
+                             , dateDayOfWeek = Monday
+                             , dateTime = Just $ OrgTime (TimeOfDay 15 43 0) Nothing
+                             , dateRepeat = Nothing }
+        in OrgDoc [] [ (titled (Plain "A")) { sectionClosed = Just cl } ]
+
     , testCase "Header - DEADLINE"
       $ testPretty orgP "Header" "* A\n  DEADLINE: <2021-04-19 Mon>"
-      $ OrgDoc [] [ Section [Plain "A"] [] Nothing (Just "2021-04-19 Mon") mempty emptyDoc ]
+      $ let dl = OrgDateTime { dateDay = fromGregorian 2021 4 19
+                             , dateDayOfWeek = Monday
+                             , dateTime = Nothing
+                             , dateRepeat = Nothing }
+        in OrgDoc [] [ (titled (Plain "A")) { sectionDeadline = Just dl } ]
+
+    , testCase "Header - SCHEDULED"
+      $ testPretty orgP "Header" "* A\n  SCHEDULED: <2021-04-19 Mon>"
+      $ let sc = OrgDateTime { dateDay = fromGregorian 2021 4 19
+                             , dateDayOfWeek = Monday
+                             , dateTime = Nothing
+                             , dateRepeat = Nothing }
+        in OrgDoc [] [ (titled (Plain "A")) { sectionScheduled = Just sc } ]
+
     , testCase "Header - CLOSED/DEADLINE"
       $ testPretty orgP "Header" "* A\n  CLOSED: [2021-04-19 Mon 15:43] DEADLINE: <2021-04-19 Mon>"
-      $ OrgDoc [] [ Section [Plain "A"] [] (Just "2021-04-19 Mon 15:43") (Just "2021-04-19 Mon") mempty emptyDoc ]
+      $ let dl = OrgDateTime { dateDay = fromGregorian 2021 4 19
+                             , dateDayOfWeek = Monday
+                             , dateTime = Nothing
+                             , dateRepeat = Nothing }
+            cl = OrgDateTime { dateDay = fromGregorian 2021 4 19
+                             , dateDayOfWeek = Monday
+                             , dateTime = Just $ OrgTime (TimeOfDay 15 43 0) Nothing
+                             , dateRepeat = Nothing }
+        in OrgDoc [] [ (titled (Plain "A")) { sectionClosed = Just cl, sectionDeadline = Just dl } ]
+
     , testCase "Header - CLOSED/DEADLINE - More"
       $ testPretty orgP "Header" "* A\n  CLOSED: [2021-04-19 Mon 15:43] DEADLINE: <2021-04-19 Mon>\nD"
-      $ OrgDoc [] [ Section [Plain "A"] []
-                    (Just "2021-04-19 Mon 15:43")
-                    (Just "2021-04-19 Mon")
-                    mempty
-                    (OrgDoc [ Paragraph [Plain "D"] ] [])]
+      $ let dl = OrgDateTime { dateDay = fromGregorian 2021 4 19
+                             , dateDayOfWeek = Monday
+                             , dateTime = Nothing
+                             , dateRepeat = Nothing }
+            cl = OrgDateTime { dateDay = fromGregorian 2021 4 19
+                             , dateDayOfWeek = Monday
+                             , dateTime = Just $ OrgTime (TimeOfDay 15 43 0) Nothing
+                             , dateRepeat = Nothing }
+        in OrgDoc [] [ Section Nothing Nothing [Plain "A"] [] (Just cl) (Just dl) Nothing Nothing mempty (OrgDoc [ Paragraph [Plain "D"]] []) ]
+
     , testCase "Header - Empty Properties Drawer"
       $ testPretty orgP "Header" "* A\n  :PROPERTIES:\n  :END:"
-      $ OrgDoc [] [ Section [Plain "A"] [] Nothing Nothing [] emptyDoc]
+      $ OrgDoc [] [ titled (Plain "A") ]
+
     , testCase "Header - One Property"
       $ testPretty orgP "Header" "* A\n  :PROPERTIES:\n  :Cat: Jack\n  :END:\nHi"
-      $ OrgDoc [] [ Section [Plain "A"] [] Nothing Nothing [("Cat", "Jack")] (OrgDoc [Paragraph [Plain "Hi"]] []) ]
+      $ OrgDoc [] [ (titled (Plain "A"))
+                    { sectionProps = [("Cat", "Jack")]
+                    , sectionDoc = OrgDoc [Paragraph [Plain "Hi"]] [] }]
+
     , testCase "Header - Two Properties"
       $ testPretty orgP "Header" "* A\n  :PROPERTIES:\n  :Cat: Jack\n  :Age: 7\n  :END:"
-      $ OrgDoc [] [ Section [Plain "A"] [] Nothing Nothing [("Cat", "Jack"), ("Age", "7")] emptyDoc ]
+      $ OrgDoc [] [ (titled (Plain "A")) { sectionProps = [("Cat", "Jack"), ("Age", "7")] } ]
+
     , testCase "Properties"
-      $ testPretty properties "Properties" "\n  :PROPERTIES:\n  :Cat: Jack\n  :END:" [("Cat", "Jack")]
-    , testCase "Property" $ testPretty property "Property" "  :Cat: Jack" ("Cat", "Jack")
+      $ testPretty properties "Properties" ":PROPERTIES:\n  :Cat: Jack\n  :END:" [("Cat", "Jack")]
+    , testCase "Property" $ testPretty property "Property" ":Cat: Jack" ("Cat", "Jack")
 
     , testCase "Bold" $ parseMaybe orgP "*Bold*"
       @?= Just (OrgDoc [Paragraph [Bold "Bold"]] [])
@@ -130,6 +201,37 @@ suite simple full = testGroup "Unit Tests"
     , testCase "Line - Space at end" $ testPretty (line '\n') "Line" "A \n" [Plain "A"]
     , testCase "Line - Dummy markup symbol" $ testPretty (line '\n') "Line" "A ~ B"
       [Plain "A", Plain "~", Plain "B"]
+    ]
+  , testGroup "Timestamps"
+    [ testCase "Repeater" $ testPretty repeater "Repeater" "+2w" (Repeater Future 2 Week)
+    , testCase "Time - Morning" $ testPretty timeRange "Time" "09:30" (OrgTime (TimeOfDay 9 30 0) Nothing)
+    , testCase "Time - Afternoon" $ testPretty timeRange "Time" "14:30" (OrgTime (TimeOfDay 14 30 0) Nothing)
+    , testCase "Time - Range" $ testPretty timeRange "Time" "09:30-14:30" (OrgTime (TimeOfDay 9 30 0) (Just (TimeOfDay 14 30 0)))
+    , testCase "Date" $ testPretty date "Date" "2021-04-27" $ fromGregorian 2021 4 27
+    , testCase "Timestamp - No time" $ testPretty timestamp "Stamp" "2021-04-27 Tue"
+      $ OrgDateTime
+      { dateDay = fromGregorian 2021 4 27
+      , dateDayOfWeek = Tuesday
+      , dateTime = Nothing
+      , dateRepeat = Nothing }
+    , testCase "Timestamp - Time" $ testPretty timestamp "Stamp" "2021-04-27 Tue 09:30"
+      $ OrgDateTime
+      { dateDay = fromGregorian 2021 4 27
+      , dateDayOfWeek = Tuesday
+      , dateTime = Just $ OrgTime (TimeOfDay 9 30 0) Nothing
+      , dateRepeat = Nothing }
+    , testCase "Timestamp - Repeat" $ testPretty timestamp "Stamp" "2021-04-27 Tue +2w"
+      $ OrgDateTime
+      { dateDay = fromGregorian 2021 4 27
+      , dateDayOfWeek = Tuesday
+      , dateTime = Nothing
+      , dateRepeat = Just $ Repeater Future 2 Week }
+    , testCase "Timestamp - Time and Repeat" $ testPretty timestamp "Stamp" "2021-04-27 Tue 09:30 +2w"
+      $ OrgDateTime
+      { dateDay = fromGregorian 2021 4 27
+      , dateDayOfWeek = Tuesday
+      , dateTime = Just $ OrgTime (TimeOfDay 9 30 0) Nothing
+      , dateRepeat = Just $ Repeater Future 2 Week }
     ]
   , testGroup "Composite Structures"
     [ testCase "Example" $ parseMaybe orgP "#+begin_example\nHi!\n\nHo\n#+end_example"
