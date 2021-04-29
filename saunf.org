@@ -137,7 +137,7 @@ Help manage the user-stories, bugs, technical debts and such.
 
 At its bare minimum, Saunf should
 - sync readme file
-  - [X] Push changes from saunf-doc to readme
+  - [ ] Push changes from saunf-doc to readme
   - [ ] Pull changes from readme to saunf-doc
   - [ ] Enrich readme with glossary terms
 - sync github issues
@@ -166,6 +166,7 @@ Concerned function: =filterNewIssues= at saunf/src/Saunf/Issue.hs:94
 :CATEGORY: issues
 :END:
 
+*** TODO Create a readme.org file from a simple readme template given in saunf-doc
 *** TODO Links to glossary terms should be added as link titles in readme
 so that github users can see the term definition by hovering over it.
 
@@ -174,8 +175,11 @@ so that github users can see the term definition by hovering over it.
 :CATEGORY: issues
 :END:
 
-*** DONE User should be able to push new issues to github issues
-CLOSED: [2021-04-10 Sat 22:22]
+*** TODO User should be able to push new issues to github issues
+Glossary terms introduced:
+1. [[Issue]]
+2. [[New Issue]]
+
 *** TODO Newly created issues should update saunf-doc with the issue ID
 
 When an issue is created, it should add =ISSUE_ID= property to the issue subtree
@@ -277,12 +281,42 @@ made, which task the user is working on (if we do TOD) etc.
 
 We'll probably need to maintain a local state for this (which isn't saunf doc),
 not sure if it is worth it. I wonder if we can get away with using git instead.
+** User defined data transformers for injecting text in readme
+
+Generating a readme will eventually need more processing than just inserting
+sections. Perhaps it will make sense to utilize org-mode's babel feature to
+write snippets in any language, make them return a well structured data, and
+inject that in the readme template. Perhaps we can use this to inject user
+transformed text in other places as well.
+** Manage Github Wiki
+Since we are maintaining a glossary, perhaps saunf should automatically create a
+wiki page with link-able glossary entries. Saunf can then add these links to
+anywhere the glossary term is linked (e.g in Readme, [[issue]] etc)
+
+Saunf can create a =.saunf= working directory, in which it clones the github
+wiki repository, make changes, commits and pushes them automatically
+** A DSL of operations
+Instead of directly doing the operations, perhaps saunf can create a DSL which
+in turn performs those changes. This DSL can allow us to add a review step to
+allow user to see what changes saunf is going to make and how.
 * Glossary
 :PROPERTIES:
 :CUSTOM_ID: glossary
 :END:
 - <<Saunf-doc>> :: The document (org-mode file) which keeps all the documentation
   related to the project.
-- <<Issue>> :: A request filed by a user to request a change, report a bug, or
-  ask a question
+- <<Issue>> :: A statement made by a user to request a change, report a bug, or
+  ask a question.
+
+  Technically an issue is an org-subtree which satisfies following conditions:
+
+  1. It has a valid org TODO directive
+  2. One of following
+     1. Immediate parent of the subtree has =CATEGORY: issues= property
+     2. Subtree itself has =CATEGORY: issue=
+
+- <<New Issue>> ::  An issue is considered "new", if
+  - Todo state of issue is "Todo"
+  - Issue don't have an =ISSUE_ID: X= property
+
 - <<Epic>> :: A named collection of [[issue][issues]]
