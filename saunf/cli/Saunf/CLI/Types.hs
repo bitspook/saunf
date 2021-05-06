@@ -6,20 +6,16 @@ module Saunf.CLI.Types where
 
 import Relude
 import Saunf.Types
-import Control.Monad.Error.Class (MonadError)
-import Text.Pandoc (PandocMonad, PandocError, PandocIO)
 
 newtype CLI a = CLI
-  { unCLI :: ReaderT (SaunfEnv CLI) PandocIO a
+  { unCLI :: ReaderT (SaunfEnv CLI) IO a
   }
   deriving newtype
     ( Functor,
       Applicative,
       Monad,
       MonadIO,
-      MonadReader (SaunfEnv CLI),
-      MonadError PandocError,
-      PandocMonad
+      MonadReader (SaunfEnv CLI)
     )
 
 data CLIOptions = CLIOptions

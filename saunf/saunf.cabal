@@ -28,6 +28,10 @@ common core
     , co-log
     , containers
     , org-mode
+    , doctemplates
+    , doclayout
+    , megaparsec
+    , aeson
 
   ghc-options:        -Wall
                       -Wno-name-shadowing
@@ -50,13 +54,10 @@ common core
                       -O2
                       -funbox-strict-fields
                       -fstatic-argument-transformation
+                      -haddock
 
   default-language:   Haskell2010
   default-extensions:
-
-  mixins:   base hiding (Prelude)
-          , relude (Relude as Prelude)
-          , relude
 
 library
   import:           core
@@ -82,7 +83,7 @@ executable saunf
   build-depends:
       saunf
     , optparse-applicative
-  hs-source-dirs: app
+  hs-source-dirs: cli
   default-language:    Haskell2010
   ghc-options:
     -threaded

@@ -17,8 +17,7 @@ import qualified Colog as CL
     richMessageAction,
     showSeverity,
   )
-import Control.Monad.Reader
-import qualified Data.Text.IO as T
+-- import Control.Monad.Reader
 import qualified Dhall (auto, input)
 import Options.Applicative
 import Relude
@@ -27,7 +26,6 @@ import Saunf.CLI.Types
 import Saunf.Conf
 import Saunf.Types
 import Saunf.Shared (readSaunfDoc)
-import qualified Text.Pandoc as P
 
 readmeOptions :: Parser ReadmeOptions
 readmeOptions =
@@ -81,8 +79,8 @@ getLogger v = case v of
 buildSaunfEnv :: Bool -> IO (SaunfEnv CLI)
 buildSaunfEnv isDebugEnabled = do
   conf <- Dhall.input Dhall.auto "./saunf.dhall"
-  pmpText <- T.readFile $ saunfDocPath conf
-  saunfDoc <- P.handleError =<< P.runIO (readSaunfDoc pmpText)
+  pmpText <- readFileText $ saunfDocPath conf
+  let saunfDoc = readSaunfDoc pmpText
   let logVerbosity = if isDebugEnabled then Debug else verbosity conf
 
   return $ SaunfEnv saunfDoc conf (getLogger logVerbosity)
@@ -97,8 +95,8 @@ run = do
 
       let cmd' = case cmd of
             Format -> Commands.format
-            Readme PushReadme -> Commands.pushReadmeFile
-            GithubIssues PushGHIssues -> Commands.pushGithubIssues
+            -- Readme PushReadme -> Commands.pushReadmeFile
+            -- GithubIssues PushGHIssues -> Commands.pushGithubIssues
             _ -> putStrLn "Not implemented yet 😢"
 
-      P.runIOorExplode $ runReaderT (unCLI cmd') env
+      runReaderT (unCLI cmd') env
