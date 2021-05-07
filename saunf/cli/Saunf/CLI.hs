@@ -25,7 +25,8 @@ import qualified Saunf.CLI.Commands as Commands
 import Saunf.CLI.Types
 import Saunf.Conf
 import Saunf.Types
-import Saunf.Shared (readSaunfDoc)
+import Saunf.Shared (readSaunfDoc, orDie)
+import Control.Monad.Catch (MonadThrow)
 
 readmeOptions :: Parser ReadmeOptions
 readmeOptions =
@@ -76,27 +77,28 @@ getLogger v = case v of
       filterByVerbosity $
         CL.cmap (encodeUtf8 . soberFmtMessage) CL.logByteStringStdout
 
-buildSaunfEnv :: Bool -> IO (SaunfEnv CLI)
+buildSaunfEnv :: (MonadThrow m, MonadIO m) => Bool -> m (SaunfEnv CLI)
 buildSaunfEnv isDebugEnabled = do
-  conf <- Dhall.input Dhall.auto "./saunf.dhall"
-  pmpText <- readFileText $ saunfDocPath conf
-  let saunfDoc = readSaunfDoc pmpText
+  conf <- liftIO $ Dhall.input Dhall.auto "./saunf.dhall"
+  pmpText <- liftIO $ readFileText $ saunfDocPath conf
+  saunfDoc <- liftIO $ readSaunfDoc pmpText `orDie` UnknownSaunfError "Failed to read saunf doc"
+
   let logVerbosity = if isDebugEnabled then Debug else verbosity conf
 
   return $ SaunfEnv saunfDoc conf (getLogger logVerbosity)
 
-run :: IO ()
+run :: (MonadThrow m, MonadIO m) => m ()
 run = do
-  (CLIOptions cmd isDebugEnabled) <- execParser cliParser
+  (CLIOptions cmd isDebugEnabled) <- liftIO $ execParser cliParser
   case cmd of
-    Init -> Commands.init
+    Init -> liftIO Commands.init
     _ -> do
-      env <- buildSaunfEnv isDebugEnabled
+      env <- liftIO $ buildSaunfEnv isDebugEnabled
 
       let cmd' = case cmd of
             Format -> Commands.format
-            -- Readme PushReadme -> Commands.pushReadmeFile
-            -- GithubIssues PushGHIssues -> Commands.pushGithubIssues
-            _ -> putStrLn "Not implemented yet 😢"
+              -- Readme PushReadme -> Commands.pushReadmeFile
+              -- GithubIssues PushGHIssues -> Commands.pushGithubIssues
+            _ -> liftIO $ putStrLn "Not implemented yet 😢"
 
-      runReaderT (unCLI cmd') env
+      liftIO $ runReaderT (unCLI cmd') env

@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- |
 -- Module    : Data.Org
@@ -63,6 +64,7 @@ module Data.Org
   , prettyOrgFile
   , prettyOrg
   , prettyWords
+  , prettyBlock
   ) where
 
 import           Control.Applicative.Combinators.NonEmpty

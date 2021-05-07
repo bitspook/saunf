@@ -4,7 +4,7 @@ let Github = { repo : Text, user : Text, token : Text }
 
 let readmePath = "./readme.md"
 
-let saunfDocPath = "./saunf/saunf.org"
+let saunfDocPath = "./saunf.org"
 
 let verbosity = VerbosityLevel.Info
 
@@ -12,18 +12,18 @@ in  { saunfDocPath
     , readmePath
     , readmeTemplate = Some
         ''
-        # $title$
+        * $title$
 
         $description$
 
-        ## Features
+        ** Features
 
-        ### $#doc-management-module$
-        ### $#issue-management-module$
+        *** $#doc-management-module$
+        *** $#issue-management-module$
 
-        ## $#mvp$
+        ** $#mvp$
 
-        ## $#usage$
+        ** $#usage$
         ''
     , github = Some
       { user = "channikhabra"

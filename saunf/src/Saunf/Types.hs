@@ -3,7 +3,14 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
-module Saunf.Types where
+module Saunf.Types
+  ( SaunfError (..),
+    Issue (..),
+    SaunfEnv (..),
+    HasSaunfDoc (..),
+    HasSaunfConf (..),
+  )
+where
 
 import Colog
   ( HasLog (..),
@@ -12,9 +19,9 @@ import Colog
   )
 import qualified Data.Map as M
 import Data.Org (OrgDoc, OrgFile, Words)
-import qualified GitHub.Data.Definitions as GH
 import Relude
 import Saunf.Conf
+import Saunf.Error
 
 data Issue = Issue
   { issueId :: Maybe Text,
@@ -55,8 +62,3 @@ instance HasSaunfDoc (SaunfEnv m) where
 
 instance HasSaunfConf (SaunfEnv m) where
   getSaunfConf (SaunfEnv _ conf _) = conf
-
-data SaunfError
-  = GithubError GH.Error
-  | SaunfConfError Text
-  deriving (Show)

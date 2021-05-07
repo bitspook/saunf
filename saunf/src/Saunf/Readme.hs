@@ -5,7 +5,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Saunf.Readme
-  ( findDescription,
+  ( description,
     soberReadmeTemplate,
     parseInjectedSectionName,
     readme,
@@ -13,70 +13,68 @@ module Saunf.Readme
 where
 
 import Colog (Message, WithLog, log, pattern D, pattern E)
+import Data.Aeson (ToJSON (..), object, (.=))
+import qualified Data.Map as M
+import Data.Org
+  ( Block (..),
+    OrgDoc (..),
+    OrgFile (..),
+    Section (..),
+    org,
+    prettyOrgFile,
+    prettyWords,
+    prettyBlock
+  )
 import Relude hiding ((<|>))
 import Saunf.Conf
 import Saunf.Shared
 import Saunf.Types
 import Text.DocLayout (render)
-import Text.Pandoc as P hiding (Reader)
-import Text.Pandoc.Shared
-import Text.Pandoc.Writers.Shared
-import Text.Parsec as Parsec
+import Text.DocTemplates (compileTemplate, renderTemplate)
+import Text.Megaparsec as P (Parsec, many, parse, (<|>))
+import Text.Megaparsec.Char (char, letterChar)
 
-findDescription :: Pandoc -> Maybe [Block]
-findDescription (Pandoc _ bs) = case takeWhile (not . isHeaderBlock) bs of
-  [] -> Nothing
-  xs -> Just xs
+-- | Grab description part of saunf-doc
+description :: (MonadReader e m, HasSaunfDoc e) => m [Block]
+description = asks $ docBlocks . orgDoc . getSaunfDoc
 
 -- | Parse the name of the section which should be injected out of special
 -- syntax "$#section-name$".
 parseInjectedSectionName :: Text -> Maybe Text
-parseInjectedSectionName xs = either (const Nothing) (Just . Relude.toText) $ parse nameParser "" xs
+parseInjectedSectionName xs = either (const Nothing) Just $ parse nameParser "" xs
   where
+    nameParser :: Parsec Void Text Text
     nameParser = do
-      _ <- Parsec.char '$'
-      _ <- Parsec.char '#'
-      name <- Parsec.many (Parsec.letter <|> Parsec.char '-' <|> Parsec.char '_')
-      _ <- Parsec.char '$'
-      return name
+      _ <- char '$'
+      _ <- char '#'
+      name <- P.many (letterChar <|> char '-')
+      _ <- char '$'
+      return $ toText name
 
--- | Try to expand a Block to a Section if it is a valid injection spot
-explodeMaybe :: (MonadReader e m, HasSaunfDoc e) => Block -> m [Block]
-explodeMaybe a =
-  case a of
-    (Header lvl _ xs) -> do
-      let grabSection id = do
-            sections <- filterSections (hasId id)
-            case sections of
-              [] -> return $ Section P.Null []
-              (s : _) -> return s
-      blks <- case parseInjectedSectionName (stringify xs) of
-        Nothing -> return $ Section P.Null [a]
-        Just name -> grabSection name
-      let (Section explodedHeader explodedBlocks) = setSectionHeaderLevel lvl blks
-      return $ explodedHeader : explodedBlocks
-    _ -> return [a]
+-- | Try to expand a Section to a Section if it is a valid injection spot
+explodeMaybe :: OrgFile -> Section -> Section
+explodeMaybe doc sec@Section {sectionHeading = heading} = fromMaybe sec sec'
+  where
+    cid = parseInjectedSectionName (unwords . toList $ prettyWords <$> heading)
+    sec' = findSection doc =<< cid
 
 -- | Evaluate all Saunf syntax in readme template to produce a valid Pandoc
--- template. It parses readme template as markdown, operate on it to remove all
--- special syntax, and return back a markdown string
+-- template. It parses readme template as an org file, operate on it to remove
+-- all special syntax, and return back a markdown string
 soberReadmeTemplate ::
   ( MonadReader e m,
     HasSaunfDoc e,
-    HasSaunfConf e,
-    PandocMonad m
+    HasSaunfConf e
   ) =>
-  m Text
+  m (Either SaunfError Text)
 soberReadmeTemplate = do
   tStr' <- asks (readmeTemplate . getSaunfConf)
+  doc <- asks getSaunfDoc
   case tStr' of
-    -- FIXME: Return "Either ConfError Text" instead of throwing a hissy-fit
-    Nothing -> error "Template not found"
+    Nothing -> return $ Left (SaunfConfError "Readme Template not found")
     (Just tStr) -> do
-      (Pandoc tMeta tBlocks) <- readMarkdown def tStr
-      blocks <- mapM explodeMaybe tBlocks
-      let expandedBlocks :: [Block] = foldr (<>) [] blocks
-      writeMarkdown def (Pandoc tMeta expandedBlocks)
+      let tOrgFile = walkSections (explodeMaybe doc) <$> org tStr
+      return . maybeToRight (ReadmeError "Failed to create readme") $ prettyOrgFile <$> tOrgFile
 
 data ReadmeContext = ReadmeContext
   { readmeTitle :: Text,
@@ -96,24 +94,25 @@ readme ::
   ( HasSaunfDoc e,
     HasSaunfConf e,
     WithLog e Message m,
-    MonadIO m,
-    PandocMonad m
+    MonadIO m
   ) =>
   m Text
 readme = do
-  sDoc@(Pandoc meta _) <- asks getSaunfDoc
+  OrgFile meta _ <- asks getSaunfDoc
   log D "Sobering up saunf-syntax from readme template"
-  soberTemplate <- soberReadmeTemplate
+  soberTemplate' <- soberReadmeTemplate
+  let soberTemplate = fromRight "" soberTemplate'
 
-  let title = lookupMetaString "title" meta
+  let title = fromMaybe "" $ M.lookup "title" meta
 
   log D "Rendering description to markdown"
-  description <- writeMd $ fromMaybe mempty (findDescription sDoc)
+  desc' <- description
+  let desc = unwords $ prettyBlock <$> desc'
 
-  let context = ReadmeContext title description
+  let context = ReadmeContext title desc
 
   log D "Compiling sober readme template"
-  tc <- liftIO $ compileTemplate "readme.md" soberTemplate
+  tc <- liftIO $ compileTemplate "readme.org" soberTemplate
   case tc of
     Left e -> do
       log E $ "Encountered error when parsing readme template.\n" <> Relude.toText e

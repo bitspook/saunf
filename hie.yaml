@@ -1,0 +1,16 @@
+cradle:
+  cabal:
+    - path: "saunf/src"
+      component: "lib:saunf"
+
+    - path: "saunf/cli"
+      component: "saunf:exe:saunf"
+
+    - path: "saunf/test"
+      component: "saunf:test:test-suite"
+
+    - path: "org-mode/lib"
+      component: "lib:org-mode"
+
+    - path: "org-mode/test"
+      component: "org-mode:test:org-mode-test"

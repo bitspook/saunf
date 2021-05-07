@@ -7,6 +7,7 @@ module Saunf.Conf where
 
 import GitHub.Data
 import Dhall (FromDhall)
+import Relude
 
 data GithubConf = GithubConf
   { user :: Name Owner,
@@ -22,6 +23,7 @@ instance FromDhall (Name Repo)
 instance FromDhall GithubConf
 instance FromDhall LogVerbosity
 
+-- | Saunf configuration
 data SaunfConf = SaunfConf
   { readmePath :: FilePath,
     saunfDocPath :: FilePath,
