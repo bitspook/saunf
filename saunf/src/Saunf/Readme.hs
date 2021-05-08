@@ -15,6 +15,7 @@ where
 import Colog (Message, WithLog, log, pattern D, pattern E)
 import Data.Aeson (ToJSON (..), object, (.=))
 import qualified Data.Map as M
+import Control.Monad.Catch (MonadThrow, throwM)
 import Data.Org
   ( Block (..),
     OrgDoc (..),
@@ -94,7 +95,8 @@ readme ::
   ( HasSaunfDoc e,
     HasSaunfConf e,
     WithLog e Message m,
-    MonadIO m
+    MonadIO m,
+    MonadThrow m
   ) =>
   m Text
 readme = do
@@ -116,7 +118,7 @@ readme = do
   case tc of
     Left e -> do
       log E $ "Encountered error when parsing readme template.\n" <> Relude.toText e
-      error (Relude.toText e)
+      throwM $ ReadmeError "Invalid readme template"
     Right t -> do
       log D "Rendering compiled readme template"
       return $ render Nothing $ renderTemplate t (toJSON context)

@@ -6,6 +6,7 @@ module Saunf.CLI.Types where
 
 import Relude
 import Saunf.Types
+import Control.Monad.Catch (MonadThrow)
 
 newtype CLI a = CLI
   { unCLI :: ReaderT (SaunfEnv CLI) IO a
@@ -15,6 +16,7 @@ newtype CLI a = CLI
       Applicative,
       Monad,
       MonadIO,
+      MonadThrow,
       MonadReader (SaunfEnv CLI)
     )
 
@@ -29,7 +31,6 @@ data CLICommands
   | Readme ReadmeOptions
   | GithubIssues GithubIssuesOptions
   deriving (Show)
-
 
 data ReadmeOptions
   = PushReadme -- Push changes to readme

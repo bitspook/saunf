@@ -2,6 +2,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Saunf.Issue where
 
@@ -14,7 +15,7 @@ import Colog
     pattern I,
   )
 import qualified Data.Map as M
-import Data.Org (OrgDoc (..), Section (..), orgDoc)
+import Data.Org (OrgDoc (..), Section (..), orgDoc, prettyWords, prettyOrg)
 import qualified GitHub.Auth as GH
 import qualified GitHub.Data.Issues as GH
 import qualified GitHub.Endpoints.Issues as GH
@@ -48,29 +49,28 @@ filterNewIssues =
         || M.lookup "todo" (issueMeta x) == Just "DONE"
     )
 
--- createGithubIssue ::
---   ( HasSaunfDoc e,
---     HasSaunfConf e,
---     MonadIO m,
---     WithLog e Message m,
---     P.PandocMonad m
---   ) =>
---   Issue ->
---   m (Either SaunfError GH.Issue)
--- createGithubIssue (Issue _ title body _) = do
---   ghConf' <- asks $ github . getSaunfConf
---   case ghConf' of
---     Nothing -> return $ Left (SaunfConfError "Missing github configuration")
---     Just (GithubConf user repo token) -> do
---       let auth = GH.OAuth (encodeUtf8 token)
+createGithubIssue ::
+  ( HasSaunfDoc e,
+    HasSaunfConf e,
+    MonadIO m,
+    WithLog e Message m
+  ) =>
+  Issue ->
+  m (Either SaunfError GH.Issue)
+createGithubIssue (Issue _ title body _) = do
+  ghConf' <- asks $ github . getSaunfConf
+  case ghConf' of
+    Nothing -> return $ Left (SaunfConfError "Missing github configuration")
+    Just (GithubConf user repo token) -> do
+      let auth = GH.OAuth (encodeUtf8 token)
 
---       let titleText = P.stringify title
---       bodyText <- writeMd body
+      let titleText = unwords . toList $ prettyWords <$> title
+      let bodyText = prettyOrg body
 
---       let newGhIssue = (GH.newIssue titleText) {GH.newIssueBody = Just bodyText}
---       let issueReq = GH.createIssueR user repo newGhIssue
+      let newGhIssue = (GH.newIssue titleText) {GH.newIssueBody = Just bodyText}
+      let issueReq = GH.createIssueR user repo newGhIssue
 
---       log D $ "Creating Github issue: " <> "\n\t[Title] " <> titleText <> "\n\t[Body] " <> bodyText
---       result <- liftIO $ GH.github auth issueReq
+      log D $ "Creating Github issue: " <> "\n\t[Title] " <> titleText <> "\n\t[Body] " <> bodyText
+      result <- liftIO $ GH.github auth issueReq
 
---       return $ first GithubError result
+      return $ first GithubError result

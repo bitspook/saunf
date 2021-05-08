@@ -93,12 +93,12 @@ run = do
   case cmd of
     Init -> liftIO Commands.init
     _ -> do
-      env <- liftIO $ buildSaunfEnv isDebugEnabled
+      env <- buildSaunfEnv isDebugEnabled
 
       let cmd' = case cmd of
             Format -> Commands.format
-              -- Readme PushReadme -> Commands.pushReadmeFile
-              -- GithubIssues PushGHIssues -> Commands.pushGithubIssues
+            Readme PushReadme -> Commands.pushReadmeFile
+            GithubIssues PushGHIssues -> Commands.pushGithubIssues
             _ -> liftIO $ putStrLn "Not implemented yet 😢"
 
       liftIO $ runReaderT (unCLI cmd') env
