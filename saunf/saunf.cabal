@@ -103,10 +103,13 @@ test-suite test-suite
   ghc-options: -Wall
   build-depends:
      hspec
+   , base
    , hspec-discover
    , saunf
    , relude
    , co-log
+   , org-mode
+   , exceptions
   other-modules:
     ReadmeSpec
     SharedSpec

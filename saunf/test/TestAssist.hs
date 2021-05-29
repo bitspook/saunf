@@ -12,26 +12,21 @@
 
 module TestAssist where
 
-import Data.Text
-import Text.Pandoc as P
 import Relude
 import Saunf.Types
 import Saunf.Conf
+import Saunf.Shared
+import Control.Monad.Catch (MonadThrow)
+import Data.Org (emptyOrgFile, OrgFile)
 import Colog (simpleMessageAction)
-
-readOrg' :: Text -> IO Pandoc
-readOrg' str = P.handleError =<< P.runIO (readOrg def str)
 
 newtype Test a = Test
   { unTest :: ReaderT (SaunfEnv Test) IO a
   }
   deriving newtype (Functor, Applicative, Monad, MonadIO, MonadReader (SaunfEnv Test))
 
-inlines :: Block -> [Inline]
-inlines = \case
-  (Plain xs) -> xs
-  (Para xs) -> xs
-  _ -> []
+readSaunfDoc' :: (MonadIO m, MonadThrow m) => Text -> m OrgFile
+readSaunfDoc' xs = readSaunfDoc xs `orDie` UnknownSaunfError "Invalid SaunfDoc"
 
 env :: SaunfEnv Test
-env = SaunfEnv mempty emptyConf simpleMessageAction
+env = SaunfEnv emptyOrgFile emptyConf simpleMessageAction

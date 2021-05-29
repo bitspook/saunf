@@ -28,11 +28,11 @@ hasProperty prop val Section {sectionProps = props} =
 
 -- | Checks if a section has a category
 hasCategory :: Text -> Section -> Bool
-hasCategory = hasProperty "category"
+hasCategory = hasProperty "CATEGORY"
 
 -- | Checks if section has given CUSTOM_ID
 hasCId :: Text -> Section -> Bool
-hasCId = hasProperty "custom_id"
+hasCId = hasProperty "CUSTOM_ID"
 
 -- | Perform given transformations on every section and block of the OrgFile
 walk :: (Section -> Section) -> (Block -> Block) -> OrgFile -> OrgFile
