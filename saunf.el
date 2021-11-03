@@ -82,16 +82,16 @@ Uses `gh' command to interact with github.
 
       (cond
        ((and (not todo-p) gh-id)
-        (setq command (format "gh issue close -R %s" gh-repo))
+        (setq command (format "gh issue close %s -R %s" gh-id gh-repo))
         (message "Executing: %s" command)
         (message "Closed issue: %s" (shell-command-to-string command))
-        (org-entry-put "GH_STATUS" "CLOSED"))
+        (org-entry-put (point) "GH_STATUS" "CLOSED"))
 
        ((and todo-p (string= gh-status "CLOSED"))
         (setq command (format "gh issue reopen %s" id))
         (message "Executing: %s" command)
         (message "Reopened issue: %s" (shell-command-to-string command))
-        (org-entry-put "GH_STATUS" "OPEN")))
+        (org-entry-put (point) "GH_STATUS" "OPEN")))
 
       (cond
        ((not gh-id) (saunf--create-gh-issue title body gh-repo labels))
