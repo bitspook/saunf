@@ -1,0 +1,60 @@
+@import "base";
+@import "footer";
+
+.hero {
+  width: 100%;
+  min-height: 50rem;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.brand {
+  font-size: 6rem;
+  margin-bottom: 4rem;
+  margin-top: 2rem;
+  font-weight: 300;
+  display: flex;
+  justify-content: center;
+}
+
+.brand .logo {
+  height: 10rem;
+  margin-right: 1rem;
+}
+
+.brand .text {
+  padding-top: 1rem;
+}
+
+.tagline {
+  font-size: 2rem;
+  line-height: 1.7;
+  max-width: 128rem;
+  margin: 0 auto;
+
+  @media (min-width: $lg) {
+    & {
+      width: 60%;
+    }
+  }
+
+  @media (min-width: $md) and (max-width: $lg) {
+    & {
+      width: 80%;
+    }
+  }
+
+  @media (min-width: $sm) and (max-width: $md) {
+    & {
+      width: 90%;
+    }
+  }
+
+  @media (max-width: $sm) {
+    & {
+      width: calc(100% - 2rem);
+      padding: 0 1rem;
+    }
+  }
+}

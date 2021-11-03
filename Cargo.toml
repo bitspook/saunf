@@ -1,0 +1,29 @@
+[package]
+authors = ["Charanjit Singh <bitspook@protonmail.com>"]
+edition = "2021"
+name = "saunf"
+version = "0.1.0"
+
+[dependencies]
+tokio = { version = "*", features = ["full"] }
+diesel = { version = "*", features = ["postgres", "serde_json", "chrono", "numeric", "uuidv07" ] }
+diesel_migrations = "*"
+serde = "*"
+serde_json = "*"
+log = "*"
+env_logger = "*"
+structopt = "*"
+rocket_dyn_templates = { version = "0.1.0-rc.1", features = ["tera"] }
+rsass = "0.22.2"
+fs_extra = "1.2.0"
+anyhow = "1.0.42"
+uuid = { version = "0.8.2", features = ["serde", "v4"] }
+
+[dependencies.rocket]
+version = "0.5.0-rc.1"
+features = [ "json" ]
+
+[dependencies.rocket_sync_db_pools]
+version = "0.1.0-dev"
+default-features = false
+features = ["diesel_postgres_pool"]

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    {% if base_url %}<base href="{{ base_url | safe }}" />{% endif %}
+    <link rel="icon" href="favicon.ico" type="image/x-icon"/>
+    <title>Saunf - Personal Project Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="css/home.css" rel="stylesheet"/>
+  </head>
+  <body>
+    <div class="hero">
+      <h1 class="brand">
+        <span class='text'>Saunf</span>
+      </h1>
+      <div class="tagline">
+        <p>
+          Personal Project Manager
+        </p>
+        </p>
+      </div>
+    </div>
+
+    {%include "partials/footer" %}
+  </body>
+</html>
