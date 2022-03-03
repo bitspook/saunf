@@ -10,6 +10,8 @@
     (forward-line)
     (org-export-string-as
      (buffer-substring-no-properties
+      ;; FIXME This is giving "Unknown nil backend" error if markdown export is
+      ;; not loaded. It gets fixed if "org-export-as-markdown" is called once.
       (region-beginning) (region-end)) 'md t '(:with-toc nil))))
 
 (defun saunf--create-gh-issue (title body repo &optional labels)
