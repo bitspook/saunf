@@ -1,5 +1,7 @@
 ;; -*- lexical-binding: t; -*-
 
+(require 'ox-md)
+
 (defun saunf--non-empty-string (str)
   "Return nil if STR is empty. STR otherwise"
   (and (not (string= str "")) str))
@@ -10,8 +12,6 @@
     (forward-line)
     (org-export-string-as
      (buffer-substring-no-properties
-      ;; FIXME This is giving "Unknown nil backend" error if markdown export is
-      ;; not loaded. It gets fixed if "org-export-as-markdown" is called once.
       (region-beginning) (region-end)) 'md t '(:with-toc nil))))
 
 (defun saunf--create-gh-issue (title body repo &optional labels)
@@ -98,5 +98,25 @@ Uses `gh' command to interact with github.
       (cond
        ((not gh-id) (saunf--create-gh-issue title body gh-repo labels))
        (gh-id (saunf--update-gh-issue gh-id title body gh-repo labels old-labels))))))
+
+;; Saunf Claims
+(defvar *saunf-claims* '())
+
+(defun saunf--org-export-claim-link (claim desc backend chan)
+  desc)
+
+(defun saunf--org-follow-claim-link (path)
+  (describe-function (intern path)))
+
+(defun saunf--org-complete-claim-link ()
+  (concat
+   "saunf-claim:"
+   (completing-read "Select Claim: " (mapcar #'symbol-name *saunf-claims*))))
+
+(org-link-set-parameters
+ "saunf-claim"
+ :export #'saunf--org-export-claim-link
+ :follow #'saunf--org-follow-claim-link
+ :complete #'saunf--org-complete-claim-link)
 
 (provide 'saunf)
