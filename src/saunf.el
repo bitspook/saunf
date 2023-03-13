@@ -15,9 +15,14 @@
 (defun saunf--cl-eval (cl-code)
   "Eval common-lisp CL-CODE."
   (sly-eval
-   `(cl:eval
-     (cl:read-from-string
-      ,(prin1-to-string cl-code)))))
+   `(cl:progn
+     (cl:when
+      (cl:not (cl:find-package :saunf))
+      (asdf:load-system "saunf"))
+     (cl:let ((cl:*package* (cl:find-package :saunf)))
+      (cl:eval
+       (cl:read-from-string
+        ,(prin1-to-string cl-code)))))))
 
 (provide 'saunf)
 ;;; saunf.el ends here
