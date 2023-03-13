@@ -1,9 +1,6 @@
 # Saunf
 
-Saunf is a plain text software project management tool.
-
-Not everyone is a plain-text fan, so to enable collaboration, saunf can
-integrate with different tools. Or it is supposed to.
+Saunf is my personal software project management tool.
 
 I am building Saunf to simplify managing software projects for me, while
 allowing people I work with to use the tools they like. At its infancy,
