@@ -8,4 +8,16 @@
 (defsection @index (:title "Saunf")
   (saunf system)
 
-  (@managing-issues section))
+  (@managing-issues section)
+
+  "# API"
+  (to-plist generic-function)
+
+  (from-jira-response generic-function))
+
+(export-always 'to-plist)
+(defgeneric to-plist (obj)
+  (:documentation "Convert OBJ to a plist.
+Useful for serializing an object across RPC calls, e.g for accessing it in
+Emacs."))
+
